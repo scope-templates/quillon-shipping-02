@@ -1,0 +1,32 @@
+[project]
+name = "quillon-post-api"
+version = "2.4.0"
+description = "The parcel API behind Quillon Post"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi==0.141.1",
+    "pydantic==2.12.5",
+    "uvicorn==0.53.0",
+    "email-validator==2.3.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "httpx==0.28.1",
+    "pytest==9.0.2",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["app", "app.routers"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "clients/python/tests"]
+pythonpath = [".", "clients/python"]

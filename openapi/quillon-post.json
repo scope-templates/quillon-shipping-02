@@ -1,0 +1,4427 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Quillon Post API",
+    "description": "Parcel shipping for online shops. Ask for rates, book the parcel, print the label and follow it\nto the door; we hand it to one of four carriers and keep the tracking in one shape.\n\nSend your API key as `Authorization: Bearer qp_live_...`. Keys that start with `qp_test_` book\nparcels that no van ever collects, and their labels come back marked SAMPLE.\n\nDates in this API are UTC. Money is in pence, weight in grams, lengths in centimetres.",
+    "contact": {
+      "name": "Quillon Post support",
+      "email": "support@quillonpost.co.uk"
+    },
+    "version": "2026-08-01"
+  },
+  "servers": [
+    {
+      "url": "https://api.quillonpost.co.uk",
+      "description": "Live"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "Service"
+        ],
+        "summary": "Is the service up",
+        "description": "No key needed. This is what the load balancer polls.",
+        "operationId": "health",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/rates/quotes": {
+      "post": {
+        "tags": [
+          "Rates"
+        ],
+        "summary": "Price a parcel with every carrier that will take it",
+        "description": "Quotes for one parcel, cheapest first.\n\nQuotes are held for half an hour and can be turned into a shipment by id, which is the only\nway to be sure the price a shopper saw at the checkout is the price we bill.",
+        "operationId": "quote_rates",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuoteSet"
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key on the request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "examples": {
+                  "missing_credentials": {
+                    "summary": "No API key on the request",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#missing_credentials",
+                      "title": "No API key on the request",
+                      "status": 401,
+                      "detail": "No API key on the request",
+                      "code": "missing_credentials"
+                    }
+                  },
+                  "invalid_key": {
+                    "summary": "That API key is not one of ours",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#invalid_key",
+                      "title": "That API key is not one of ours",
+                      "status": 401,
+                      "detail": "That API key is not one of ours",
+                      "code": "invalid_key"
+                    }
+                  },
+                  "account_closed": {
+                    "summary": "That account is closed",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#account_closed",
+                      "title": "That account is closed",
+                      "status": 401,
+                      "detail": "That account is closed",
+                      "code": "account_closed"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "422": {
+            "description": "The request body will not do",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "examples": {
+                  "validation_failed": {
+                    "summary": "The request body will not do",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#validation_failed",
+                      "title": "The request body will not do",
+                      "status": 422,
+                      "detail": "The request body will not do",
+                      "code": "validation_failed"
+                    }
+                  },
+                  "rate_unavailable": {
+                    "summary": "No carrier will take that parcel",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#rate_unavailable",
+                      "title": "No carrier will take that parcel",
+                      "status": 422,
+                      "detail": "No carrier will take that parcel",
+                      "code": "rate_unavailable"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/shipments": {
+      "post": {
+        "tags": [
+          "Shipments"
+        ],
+        "summary": "Book a parcel on to a carrier",
+        "description": "Books the parcel, reserves a tracking number and puts the label in the queue to print.\n\nEither send a quote_id from /v1/rates/quotes, or name a carrier_code and a service and we\nwill price it off the card as it stands now.",
+        "operationId": "create_shipment",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShipmentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Shipment"
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              },
+              "Quillon-Idempotent-Replay": {
+                "description": "true when this is the answer to an earlier call with the same key.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "true"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key on the request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "examples": {
+                  "missing_credentials": {
+                    "summary": "No API key on the request",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#missing_credentials",
+                      "title": "No API key on the request",
+                      "status": 401,
+                      "detail": "No API key on the request",
+                      "code": "missing_credentials"
+                    }
+                  },
+                  "invalid_key": {
+                    "summary": "That API key is not one of ours",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#invalid_key",
+                      "title": "That API key is not one of ours",
+                      "status": 401,
+                      "detail": "That API key is not one of ours",
+                      "code": "invalid_key"
+                    }
+                  },
+                  "account_closed": {
+                    "summary": "That account is closed",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#account_closed",
+                      "title": "That account is closed",
+                      "status": 401,
+                      "detail": "That account is closed",
+                      "code": "account_closed"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "422": {
+            "description": "The request body will not do",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "examples": {
+                  "validation_failed": {
+                    "summary": "The request body will not do",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#validation_failed",
+                      "title": "The request body will not do",
+                      "status": 422,
+                      "detail": "The request body will not do",
+                      "code": "validation_failed"
+                    }
+                  },
+                  "rate_unavailable": {
+                    "summary": "No carrier will take that parcel",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#rate_unavailable",
+                      "title": "No carrier will take that parcel",
+                      "status": 422,
+                      "detail": "No carrier will take that parcel",
+                      "code": "rate_unavailable"
+                    }
+                  },
+                  "quote_expired": {
+                    "summary": "That quote has run out",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#quote_expired",
+                      "title": "That quote has run out",
+                      "status": 422,
+                      "detail": "That quote has run out",
+                      "code": "quote_expired"
+                    }
+                  },
+                  "quote_not_found": {
+                    "summary": "No such quote",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#quote_not_found",
+                      "title": "No such quote",
+                      "status": 422,
+                      "detail": "No such quote",
+                      "code": "quote_not_found"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "That idempotency key was used on a different body",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "examples": {
+                  "idempotency_conflict": {
+                    "summary": "That idempotency key was used on a different body",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#idempotency_conflict",
+                      "title": "That idempotency key was used on a different body",
+                      "status": 409,
+                      "detail": "That idempotency key was used on a different body",
+                      "code": "idempotency_conflict"
+                    }
+                  },
+                  "reference_in_use": {
+                    "summary": "That reference is on another shipment",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#reference_in_use",
+                      "title": "That reference is on another shipment",
+                      "status": 409,
+                      "detail": "That reference is on another shipment",
+                      "code": "reference_in_use"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Shipments"
+        ],
+        "summary": "List the account's shipments, newest first",
+        "operationId": "list_shipments",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Narrow to one status.",
+              "title": "Status"
+            },
+            "description": "Narrow to one status."
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The next_cursor off the last page.",
+              "title": "Cursor"
+            },
+            "description": "The next_cursor off the last page."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 100,
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShipmentPage"
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key on the request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "examples": {
+                  "missing_credentials": {
+                    "summary": "No API key on the request",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#missing_credentials",
+                      "title": "No API key on the request",
+                      "status": 401,
+                      "detail": "No API key on the request",
+                      "code": "missing_credentials"
+                    }
+                  },
+                  "invalid_key": {
+                    "summary": "That API key is not one of ours",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#invalid_key",
+                      "title": "That API key is not one of ours",
+                      "status": 401,
+                      "detail": "That API key is not one of ours",
+                      "code": "invalid_key"
+                    }
+                  },
+                  "account_closed": {
+                    "summary": "That account is closed",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#account_closed",
+                      "title": "That account is closed",
+                      "status": 401,
+                      "detail": "That account is closed",
+                      "code": "account_closed"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "422": {
+            "description": "The request body will not do",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "examples": {
+                  "validation_failed": {
+                    "summary": "The request body will not do",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#validation_failed",
+                      "title": "The request body will not do",
+                      "status": 422,
+                      "detail": "The request body will not do",
+                      "code": "validation_failed"
+                    }
+                  },
+                  "invalid_cursor": {
+                    "summary": "That cursor is not one we handed out",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#invalid_cursor",
+                      "title": "That cursor is not one we handed out",
+                      "status": 422,
+                      "detail": "That cursor is not one we handed out",
+                      "code": "invalid_cursor"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/shipments/{shipment_id}": {
+      "get": {
+        "tags": [
+          "Shipments"
+        ],
+        "summary": "One shipment",
+        "operationId": "get_shipment",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "shipment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Shipment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Shipment"
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key on the request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "examples": {
+                  "missing_credentials": {
+                    "summary": "No API key on the request",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#missing_credentials",
+                      "title": "No API key on the request",
+                      "status": 401,
+                      "detail": "No API key on the request",
+                      "code": "missing_credentials"
+                    }
+                  },
+                  "invalid_key": {
+                    "summary": "That API key is not one of ours",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#invalid_key",
+                      "title": "That API key is not one of ours",
+                      "status": 401,
+                      "detail": "That API key is not one of ours",
+                      "code": "invalid_key"
+                    }
+                  },
+                  "account_closed": {
+                    "summary": "That account is closed",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#account_closed",
+                      "title": "That account is closed",
+                      "status": 401,
+                      "detail": "That account is closed",
+                      "code": "account_closed"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "404": {
+            "description": "No such thing here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "examples": {
+                  "not_found": {
+                    "summary": "No such thing here",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#not_found",
+                      "title": "No such thing here",
+                      "status": 404,
+                      "detail": "No such thing here",
+                      "code": "not_found"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/shipments/{shipment_id}/label": {
+      "post": {
+        "tags": [
+          "Shipments"
+        ],
+        "summary": "The label to print and stick on the parcel",
+        "description": "A link to a PDF, good for a day. Ask again after that and you get a fresh link.\n\nA test key gets a sample label with the tracking number on it; no depot will take one.",
+        "operationId": "create_label",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "shipment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Shipment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Label"
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key on the request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "examples": {
+                  "missing_credentials": {
+                    "summary": "No API key on the request",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#missing_credentials",
+                      "title": "No API key on the request",
+                      "status": 401,
+                      "detail": "No API key on the request",
+                      "code": "missing_credentials"
+                    }
+                  },
+                  "invalid_key": {
+                    "summary": "That API key is not one of ours",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#invalid_key",
+                      "title": "That API key is not one of ours",
+                      "status": 401,
+                      "detail": "That API key is not one of ours",
+                      "code": "invalid_key"
+                    }
+                  },
+                  "account_closed": {
+                    "summary": "That account is closed",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#account_closed",
+                      "title": "That account is closed",
+                      "status": 401,
+                      "detail": "That account is closed",
+                      "code": "account_closed"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "404": {
+            "description": "No such thing here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "examples": {
+                  "not_found": {
+                    "summary": "No such thing here",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#not_found",
+                      "title": "No such thing here",
+                      "status": 404,
+                      "detail": "No such thing here",
+                      "code": "not_found"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "There is no label for this shipment",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "examples": {
+                  "label_unavailable": {
+                    "summary": "There is no label for this shipment",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#label_unavailable",
+                      "title": "There is no label for this shipment",
+                      "status": 409,
+                      "detail": "There is no label for this shipment",
+                      "code": "label_unavailable"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/shipments/{shipment_id}/cancel": {
+      "post": {
+        "tags": [
+          "Shipments"
+        ],
+        "summary": "Stop a parcel before the driver has it",
+        "description": "Only while the shipment is still `created`. Once it is collected it is the carrier's.",
+        "operationId": "cancel_shipment",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "shipment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Shipment Id"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Shipment"
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              },
+              "Quillon-Idempotent-Replay": {
+                "description": "true when this is the answer to an earlier call with the same key.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "true"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key on the request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "examples": {
+                  "missing_credentials": {
+                    "summary": "No API key on the request",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#missing_credentials",
+                      "title": "No API key on the request",
+                      "status": 401,
+                      "detail": "No API key on the request",
+                      "code": "missing_credentials"
+                    }
+                  },
+                  "invalid_key": {
+                    "summary": "That API key is not one of ours",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#invalid_key",
+                      "title": "That API key is not one of ours",
+                      "status": 401,
+                      "detail": "That API key is not one of ours",
+                      "code": "invalid_key"
+                    }
+                  },
+                  "account_closed": {
+                    "summary": "That account is closed",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#account_closed",
+                      "title": "That account is closed",
+                      "status": 401,
+                      "detail": "That account is closed",
+                      "code": "account_closed"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "404": {
+            "description": "No such thing here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "examples": {
+                  "not_found": {
+                    "summary": "No such thing here",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#not_found",
+                      "title": "No such thing here",
+                      "status": 404,
+                      "detail": "No such thing here",
+                      "code": "not_found"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The parcel has gone too far to cancel",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "examples": {
+                  "not_cancellable": {
+                    "summary": "The parcel has gone too far to cancel",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#not_cancellable",
+                      "title": "The parcel has gone too far to cancel",
+                      "status": 409,
+                      "detail": "The parcel has gone too far to cancel",
+                      "code": "not_cancellable"
+                    }
+                  },
+                  "idempotency_conflict": {
+                    "summary": "That idempotency key was used on a different body",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#idempotency_conflict",
+                      "title": "That idempotency key was used on a different body",
+                      "status": 409,
+                      "detail": "That idempotency key was used on a different body",
+                      "code": "idempotency_conflict"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/shipments/{shipment_id}/events": {
+      "get": {
+        "tags": [
+          "Shipments"
+        ],
+        "summary": "Every scan on a parcel, oldest first",
+        "description": "What the carrier has told us, in the order it happened.",
+        "operationId": "list_tracking_events",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "shipment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Shipment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackingEvents"
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key on the request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "examples": {
+                  "missing_credentials": {
+                    "summary": "No API key on the request",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#missing_credentials",
+                      "title": "No API key on the request",
+                      "status": 401,
+                      "detail": "No API key on the request",
+                      "code": "missing_credentials"
+                    }
+                  },
+                  "invalid_key": {
+                    "summary": "That API key is not one of ours",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#invalid_key",
+                      "title": "That API key is not one of ours",
+                      "status": 401,
+                      "detail": "That API key is not one of ours",
+                      "code": "invalid_key"
+                    }
+                  },
+                  "account_closed": {
+                    "summary": "That account is closed",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#account_closed",
+                      "title": "That account is closed",
+                      "status": 401,
+                      "detail": "That account is closed",
+                      "code": "account_closed"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "404": {
+            "description": "No such thing here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "examples": {
+                  "not_found": {
+                    "summary": "No such thing here",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#not_found",
+                      "title": "No such thing here",
+                      "status": 404,
+                      "detail": "No such thing here",
+                      "code": "not_found"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/webhooks": {
+      "post": {
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Register a URL to be told about parcels",
+        "description": "The secret comes back once, here. Store it: we cannot show it to you again.\n\nSign-checking is described in docs/tracking-and-webhooks.md, with a snippet to copy.",
+        "operationId": "create_webhook_endpoint",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebhookRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookEndpoint"
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              },
+              "Quillon-Idempotent-Replay": {
+                "description": "true when this is the answer to an earlier call with the same key.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "true"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key on the request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "examples": {
+                  "missing_credentials": {
+                    "summary": "No API key on the request",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#missing_credentials",
+                      "title": "No API key on the request",
+                      "status": 401,
+                      "detail": "No API key on the request",
+                      "code": "missing_credentials"
+                    }
+                  },
+                  "invalid_key": {
+                    "summary": "That API key is not one of ours",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#invalid_key",
+                      "title": "That API key is not one of ours",
+                      "status": 401,
+                      "detail": "That API key is not one of ours",
+                      "code": "invalid_key"
+                    }
+                  },
+                  "account_closed": {
+                    "summary": "That account is closed",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#account_closed",
+                      "title": "That account is closed",
+                      "status": 401,
+                      "detail": "That account is closed",
+                      "code": "account_closed"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "422": {
+            "description": "The request body will not do",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "examples": {
+                  "validation_failed": {
+                    "summary": "The request body will not do",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#validation_failed",
+                      "title": "The request body will not do",
+                      "status": 422,
+                      "detail": "The request body will not do",
+                      "code": "validation_failed"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "That idempotency key was used on a different body",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "examples": {
+                  "idempotency_conflict": {
+                    "summary": "That idempotency key was used on a different body",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#idempotency_conflict",
+                      "title": "That idempotency key was used on a different body",
+                      "status": 409,
+                      "detail": "That idempotency key was used on a different body",
+                      "code": "idempotency_conflict"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "The endpoints on this account",
+        "operationId": "list_webhook_endpoints",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookEndpoints"
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key on the request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "examples": {
+                  "missing_credentials": {
+                    "summary": "No API key on the request",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#missing_credentials",
+                      "title": "No API key on the request",
+                      "status": 401,
+                      "detail": "No API key on the request",
+                      "code": "missing_credentials"
+                    }
+                  },
+                  "invalid_key": {
+                    "summary": "That API key is not one of ours",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#invalid_key",
+                      "title": "That API key is not one of ours",
+                      "status": 401,
+                      "detail": "That API key is not one of ours",
+                      "code": "invalid_key"
+                    }
+                  },
+                  "account_closed": {
+                    "summary": "That account is closed",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#account_closed",
+                      "title": "That account is closed",
+                      "status": 401,
+                      "detail": "That account is closed",
+                      "code": "account_closed"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/v1/webhooks/{endpoint_id}": {
+      "delete": {
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Stop posting to an endpoint",
+        "description": "Deliveries already queued for it stop with it.",
+        "operationId": "delete_webhook_endpoint",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "endpoint_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Endpoint Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response",
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key on the request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "examples": {
+                  "missing_credentials": {
+                    "summary": "No API key on the request",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#missing_credentials",
+                      "title": "No API key on the request",
+                      "status": 401,
+                      "detail": "No API key on the request",
+                      "code": "missing_credentials"
+                    }
+                  },
+                  "invalid_key": {
+                    "summary": "That API key is not one of ours",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#invalid_key",
+                      "title": "That API key is not one of ours",
+                      "status": 401,
+                      "detail": "That API key is not one of ours",
+                      "code": "invalid_key"
+                    }
+                  },
+                  "account_closed": {
+                    "summary": "That account is closed",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#account_closed",
+                      "title": "That account is closed",
+                      "status": 401,
+                      "detail": "That account is closed",
+                      "code": "account_closed"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "404": {
+            "description": "No such thing here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "examples": {
+                  "not_found": {
+                    "summary": "No such thing here",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#not_found",
+                      "title": "No such thing here",
+                      "status": 404,
+                      "detail": "No such thing here",
+                      "code": "not_found"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/carriers": {
+      "get": {
+        "tags": [
+          "Carriers"
+        ],
+        "summary": "The carriers and their services",
+        "description": "Service names for the whole account. Which of them will take a given parcel is a quote.\n\nWe add and drop carriers from time to time; read this rather than hard-coding the four.",
+        "operationId": "list_carriers",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Carriers"
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key on the request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "examples": {
+                  "missing_credentials": {
+                    "summary": "No API key on the request",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#missing_credentials",
+                      "title": "No API key on the request",
+                      "status": 401,
+                      "detail": "No API key on the request",
+                      "code": "missing_credentials"
+                    }
+                  },
+                  "invalid_key": {
+                    "summary": "That API key is not one of ours",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#invalid_key",
+                      "title": "That API key is not one of ours",
+                      "status": 401,
+                      "detail": "That API key is not one of ours",
+                      "code": "invalid_key"
+                    }
+                  },
+                  "account_closed": {
+                    "summary": "That account is closed",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#account_closed",
+                      "title": "That account is closed",
+                      "status": 401,
+                      "detail": "That account is closed",
+                      "code": "account_closed"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/labels/{token}.pdf": {
+      "get": {
+        "tags": [
+          "Labels"
+        ],
+        "summary": "The label PDF behind the link",
+        "operationId": "get_label_pdf",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The label, ready to print.",
+            "content": {
+              "application/pdf": {}
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such thing here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "examples": {
+                  "not_found": {
+                    "summary": "No such thing here",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#not_found",
+                      "title": "No such thing here",
+                      "status": 404,
+                      "detail": "No such thing here",
+                      "code": "not_found"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/carriers/{carrier_code}/scans": {
+      "post": {
+        "tags": [
+          "Carrier feeds"
+        ],
+        "summary": "Record one scan against a parcel",
+        "description": "One scan, matched to the parcel by tracking number.\n\nThe same scan posted twice is recorded once. A scan that would wind a parcel backwards is\nkept but leaves the status where it is; a parcel that is finished with takes no more.",
+        "operationId": "record_scan",
+        "parameters": [
+          {
+            "name": "carrier_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Carrier Code"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CarrierScan"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScanReceipt"
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "That carrier secret is not one of ours",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "examples": {
+                  "invalid_carrier_secret": {
+                    "summary": "That carrier secret is not one of ours",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#invalid_carrier_secret",
+                      "title": "That carrier secret is not one of ours",
+                      "status": 401,
+                      "detail": "That carrier secret is not one of ours",
+                      "code": "invalid_carrier_secret"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such thing here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "examples": {
+                  "not_found": {
+                    "summary": "No such thing here",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#not_found",
+                      "title": "No such thing here",
+                      "status": 404,
+                      "detail": "No such thing here",
+                      "code": "not_found"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "That parcel is not taking scans",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "examples": {
+                  "not_scannable": {
+                    "summary": "That parcel is not taking scans",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#not_scannable",
+                      "title": "That parcel is not taking scans",
+                      "status": 409,
+                      "detail": "That parcel is not taking scans",
+                      "code": "not_scannable"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Address": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "company": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company"
+          },
+          "line1": {
+            "type": "string",
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Line1"
+          },
+          "line2": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 160
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Line2"
+          },
+          "city": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "City"
+          },
+          "postcode": {
+            "type": "string",
+            "maxLength": 9,
+            "minLength": 5,
+            "title": "Postcode"
+          },
+          "country": {
+            "type": "string",
+            "maxLength": 2,
+            "minLength": 2,
+            "title": "Country",
+            "default": "GB"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "email"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "line1",
+          "city",
+          "postcode"
+        ],
+        "title": "Address"
+      },
+      "Carrier": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "collection_cutoff": {
+            "type": "string",
+            "title": "Collection Cutoff"
+          },
+          "services": {
+            "items": {
+              "$ref": "#/components/schemas/CarrierService"
+            },
+            "type": "array",
+            "title": "Services"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "collection_cutoff",
+          "services"
+        ],
+        "title": "Carrier"
+      },
+      "CarrierScan": {
+        "properties": {
+          "tracking_number": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 6,
+            "title": "Tracking Number"
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "label_created",
+              "collected",
+              "at_origin_depot",
+              "in_transit",
+              "at_delivery_depot",
+              "out_for_delivery",
+              "delivery_attempted",
+              "held_at_depot",
+              "address_query",
+              "delivered",
+              "returned_to_sender",
+              "cancelled"
+            ],
+            "title": "Code"
+          },
+          "occurred_at": {
+            "type": "string",
+            "title": "Occurred At",
+            "description": "When the scan happened, UTC, ISO 8601."
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 160
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "Their wording. Ours is used if this is left out."
+          }
+        },
+        "type": "object",
+        "required": [
+          "tracking_number",
+          "code",
+          "occurred_at"
+        ],
+        "title": "CarrierScan",
+        "description": "One scan as a carrier posts it to us.",
+        "example": {
+          "code": "out_for_delivery",
+          "location": "London",
+          "occurred_at": "2026-08-15T07:11:00Z",
+          "tracking_number": "WDV4471029358"
+        }
+      },
+      "CarrierService": {
+        "properties": {
+          "service": {
+            "type": "string",
+            "title": "Service"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "max_grams": {
+            "type": "integer",
+            "title": "Max Grams"
+          }
+        },
+        "type": "object",
+        "required": [
+          "service",
+          "name",
+          "description",
+          "max_grams"
+        ],
+        "title": "CarrierService"
+      },
+      "Carriers": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/Carrier"
+            },
+            "type": "array",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "Carriers"
+      },
+      "Dimensions": {
+        "properties": {
+          "length_cm": {
+            "type": "number",
+            "maximum": 300.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Length Cm"
+          },
+          "width_cm": {
+            "type": "number",
+            "maximum": 300.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Width Cm"
+          },
+          "height_cm": {
+            "type": "number",
+            "maximum": 300.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Height Cm"
+          }
+        },
+        "type": "object",
+        "required": [
+          "length_cm",
+          "width_cm",
+          "height_cm"
+        ],
+        "title": "Dimensions"
+      },
+      "Health": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "build": {
+            "type": "string",
+            "title": "Build"
+          },
+          "shipments": {
+            "type": "integer",
+            "title": "Shipments"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "version",
+          "build",
+          "shipments"
+        ],
+        "title": "Health"
+      },
+      "Label": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "format": {
+            "type": "string",
+            "const": "pdf",
+            "title": "Format"
+          },
+          "expires_at": {
+            "type": "string",
+            "title": "Expires At"
+          },
+          "tracking_number": {
+            "type": "string",
+            "title": "Tracking Number"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url",
+          "format",
+          "expires_at",
+          "tracking_number"
+        ],
+        "title": "Label"
+      },
+      "ListedEndpoint": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "events": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Events"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "url",
+          "events",
+          "status",
+          "created_at"
+        ],
+        "title": "ListedEndpoint",
+        "description": "An endpoint as it comes back from the list. The secret is not on it."
+      },
+      "Parcel": {
+        "properties": {
+          "weight_grams": {
+            "type": "integer",
+            "maximum": 60000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Weight Grams"
+          },
+          "dimensions_cm": {
+            "$ref": "#/components/schemas/Dimensions"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "weight_grams",
+          "dimensions_cm"
+        ],
+        "title": "Parcel"
+      },
+      "Quote": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "carrier_code": {
+            "type": "string",
+            "title": "Carrier Code"
+          },
+          "carrier_name": {
+            "type": "string",
+            "title": "Carrier Name"
+          },
+          "service": {
+            "type": "string",
+            "title": "Service"
+          },
+          "price_pence": {
+            "type": "integer",
+            "title": "Price Pence"
+          },
+          "estimated_days": {
+            "type": "integer",
+            "title": "Estimated Days"
+          },
+          "expires_at": {
+            "type": "string",
+            "title": "Expires At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "carrier_code",
+          "carrier_name",
+          "service",
+          "price_pence",
+          "estimated_days",
+          "expires_at"
+        ],
+        "title": "Quote"
+      },
+      "QuoteRequest": {
+        "properties": {
+          "from_postcode": {
+            "type": "string",
+            "maxLength": 9,
+            "minLength": 5,
+            "title": "From Postcode"
+          },
+          "to_postcode": {
+            "type": "string",
+            "maxLength": 9,
+            "minLength": 5,
+            "title": "To Postcode"
+          },
+          "weight_grams": {
+            "type": "integer",
+            "maximum": 60000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Weight Grams"
+          },
+          "dimensions_cm": {
+            "$ref": "#/components/schemas/Dimensions"
+          },
+          "service": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Service",
+            "description": "Ask for one service by name instead of all of them."
+          }
+        },
+        "type": "object",
+        "required": [
+          "from_postcode",
+          "to_postcode",
+          "weight_grams",
+          "dimensions_cm"
+        ],
+        "title": "QuoteRequest",
+        "example": {
+          "dimensions_cm": {
+            "height_cm": 10,
+            "length_cm": 32,
+            "width_cm": 24
+          },
+          "from_postcode": "BS1 4DJ",
+          "to_postcode": "EC2A 4NE",
+          "weight_grams": 1800
+        }
+      },
+      "QuoteSet": {
+        "properties": {
+          "quotes": {
+            "items": {
+              "$ref": "#/components/schemas/Quote"
+            },
+            "type": "array",
+            "title": "Quotes"
+          },
+          "zone": {
+            "type": "string",
+            "enum": [
+              "london",
+              "mainland",
+              "highlands",
+              "islands"
+            ],
+            "title": "Zone"
+          },
+          "chargeable_weight_grams": {
+            "type": "integer",
+            "title": "Chargeable Weight Grams",
+            "description": "The greater of what the parcel weighs and what its size comes to."
+          }
+        },
+        "type": "object",
+        "required": [
+          "quotes",
+          "zone",
+          "chargeable_weight_grams"
+        ],
+        "title": "QuoteSet"
+      },
+      "ScanReceipt": {
+        "properties": {
+          "shipment_id": {
+            "type": "string",
+            "title": "Shipment Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "created",
+              "collected",
+              "in_transit",
+              "out_for_delivery",
+              "delivered",
+              "held",
+              "returned",
+              "cancelled"
+            ],
+            "title": "Status"
+          },
+          "recorded": {
+            "type": "boolean",
+            "title": "Recorded",
+            "description": "False when this scan was already on the parcel."
+          }
+        },
+        "type": "object",
+        "required": [
+          "shipment_id",
+          "status",
+          "recorded"
+        ],
+        "title": "ScanReceipt"
+      },
+      "Shipment": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "test",
+              "live"
+            ],
+            "title": "Mode"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "created",
+              "collected",
+              "in_transit",
+              "out_for_delivery",
+              "delivered",
+              "held",
+              "returned",
+              "cancelled"
+            ],
+            "title": "Status"
+          },
+          "carrier_code": {
+            "type": "string",
+            "title": "Carrier Code"
+          },
+          "service": {
+            "type": "string",
+            "title": "Service"
+          },
+          "tracking_number": {
+            "type": "string",
+            "title": "Tracking Number"
+          },
+          "price_pence": {
+            "type": "integer",
+            "title": "Price Pence"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference"
+          },
+          "quote_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quote Id"
+          },
+          "sender": {
+            "$ref": "#/components/schemas/Address"
+          },
+          "recipient": {
+            "$ref": "#/components/schemas/Address"
+          },
+          "parcel": {
+            "$ref": "#/components/schemas/Parcel"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "collected_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Collected At"
+          },
+          "delivered_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivered At"
+          },
+          "cancelled_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cancelled At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "mode",
+          "status",
+          "carrier_code",
+          "service",
+          "tracking_number",
+          "price_pence",
+          "sender",
+          "recipient",
+          "parcel",
+          "created_at"
+        ],
+        "title": "Shipment"
+      },
+      "ShipmentPage": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/Shipment"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor",
+            "description": "Pass this back as ?cursor= for the next page."
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ShipmentPage"
+      },
+      "ShipmentRequest": {
+        "properties": {
+          "sender": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Address"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Leave it out and we use the dispatch address held on your account."
+          },
+          "recipient": {
+            "$ref": "#/components/schemas/Address"
+          },
+          "parcel": {
+            "$ref": "#/components/schemas/Parcel"
+          },
+          "quote_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quote Id",
+            "description": "A quote from /v1/rates/quotes, taken as priced."
+          },
+          "carrier_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Carrier Code"
+          },
+          "service": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Service"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference",
+            "description": "Your own order number. We keep it unique per account."
+          }
+        },
+        "type": "object",
+        "required": [
+          "recipient",
+          "parcel"
+        ],
+        "title": "ShipmentRequest",
+        "example": {
+          "parcel": {
+            "description": "Two glazed bowls",
+            "dimensions_cm": {
+              "height_cm": 10,
+              "length_cm": 32,
+              "width_cm": 24
+            },
+            "weight_grams": 1800
+          },
+          "quote_id": "qt_r2fd29gwz5zgtd3nznjbtc",
+          "recipient": {
+            "city": "London",
+            "line1": "18 Ravensbourne Terrace",
+            "name": "Joanne Bex",
+            "phone": "07700 900412",
+            "postcode": "EC2A 4NE"
+          },
+          "reference": "WEB-10482"
+        }
+      },
+      "TrackingEvent": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "location": {
+            "type": "string",
+            "title": "Location"
+          },
+          "occurred_at": {
+            "type": "string",
+            "title": "Occurred At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "description",
+          "location",
+          "occurred_at"
+        ],
+        "title": "TrackingEvent"
+      },
+      "TrackingEvents": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/TrackingEvent"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "created",
+              "collected",
+              "in_transit",
+              "out_for_delivery",
+              "delivered",
+              "held",
+              "returned",
+              "cancelled"
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "status"
+        ],
+        "title": "TrackingEvents"
+      },
+      "WebhookEndpoint": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "events": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Events"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "secret": {
+            "type": "string",
+            "title": "Secret",
+            "description": "Shown once, when the endpoint is created. Keep it."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "url",
+          "events",
+          "status",
+          "created_at",
+          "secret"
+        ],
+        "title": "WebhookEndpoint"
+      },
+      "WebhookEndpoints": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ListedEndpoint"
+            },
+            "type": "array",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "WebhookEndpoints"
+      },
+      "WebhookRequest": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "maxLength": 400,
+            "minLength": 8,
+            "title": "Url"
+          },
+          "events": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "shipment.created",
+                "shipment.cancelled",
+                "shipment.delivered",
+                "tracking.updated"
+              ]
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Events"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url",
+          "events"
+        ],
+        "title": "WebhookRequest",
+        "example": {
+          "events": [
+            "shipment.delivered",
+            "tracking.updated"
+          ],
+          "url": "https://yourshop.co.uk/hooks/quillon"
+        }
+      },
+      "Problem": {
+        "description": "Every refusal the API makes looks like this.",
+        "example": {
+          "code": "not_cancellable",
+          "detail": "This parcel is in transit and the carrier has it.",
+          "status": 409,
+          "title": "The parcel has gone too far to cancel",
+          "type": "https://quillonpost.co.uk/docs/errors#not_cancellable"
+        },
+        "properties": {
+          "type": {
+            "description": "A link to the page in our docs about this code.",
+            "title": "Type",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "integer"
+          },
+          "detail": {
+            "description": "What went wrong with this particular request.",
+            "title": "Detail",
+            "type": "string"
+          },
+          "code": {
+            "description": "The stable name for the refusal. Branch on this.",
+            "title": "Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "status",
+          "detail",
+          "code"
+        ],
+        "title": "Problem",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "description": "Your API key, as Bearer qp_live_...",
+        "scheme": "bearer"
+      }
+    },
+    "responses": {
+      "RateLimited": {
+        "description": "Too many requests on this key this minute.",
+        "headers": {
+          "Quillon-Version": {
+            "description": "The dated version this deployment speaks.",
+            "schema": {
+              "type": "string",
+              "examples": [
+                "2026-08-01"
+              ]
+            }
+          },
+          "X-RateLimit-Limit": {
+            "description": "Requests allowed on this key in a minute.",
+            "schema": {
+              "type": "integer",
+              "examples": [
+                600
+              ]
+            }
+          },
+          "X-RateLimit-Remaining": {
+            "description": "What is left of the limit in this minute.",
+            "schema": {
+              "type": "integer",
+              "examples": [
+                573
+              ]
+            }
+          },
+          "X-RateLimit-Reset": {
+            "description": "Unix seconds at which the minute turns over.",
+            "schema": {
+              "type": "integer",
+              "examples": [
+                1788080460
+              ]
+            }
+          }
+        },
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            },
+            "example": {
+              "type": "https://quillonpost.co.uk/docs/errors#rate_limited",
+              "title": "Too many requests",
+              "status": 429,
+              "detail": "Too many requests",
+              "code": "rate_limited"
+            }
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Rates",
+      "description": "What a parcel costs with each carrier that will take it."
+    },
+    {
+      "name": "Shipments",
+      "description": "Booking a parcel, the label, the cancel, the tracking."
+    },
+    {
+      "name": "Webhooks",
+      "description": "Being told about a parcel instead of asking."
+    },
+    {
+      "name": "Carriers",
+      "description": "Who we route to and what they sell."
+    },
+    {
+      "name": "Labels",
+      "description": "The PDF behind a label link."
+    },
+    {
+      "name": "Service",
+      "description": "Is it up."
+    }
+  ],
+  "webhooks": {
+    "shipment_event": {
+      "post": {
+        "summary": "A delivery to a registered endpoint",
+        "description": "Posted to every endpoint listening for the event. Signed with the endpoint secret in `Quillon-Signature`; refuse a signature more than 300 seconds old. Answer with any 2xx.",
+        "operationId": "receiveShipmentEvent",
+        "parameters": [
+          {
+            "name": "Quillon-Signature",
+            "in": "header",
+            "required": true,
+            "description": "t=<unix seconds>,v1=<hex hmac-sha256>",
+            "schema": {
+              "type": "string",
+              "examples": [
+                "t=1785928804,v1=6f0c1e1b0b0bb61e0dc63f0f9b6b0a7c9b1f2a4e7d8c0b5a3e2d1c0b9a8f7e6d"
+              ]
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "id",
+                  "type",
+                  "created_at",
+                  "data"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "examples": [
+                      "whev_hjgktwzmmpdbnyzpmptfk9"
+                    ]
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "shipment.created",
+                      "shipment.cancelled",
+                      "shipment.delivered",
+                      "tracking.updated"
+                    ]
+                  },
+                  "created_at": {
+                    "type": "string"
+                  },
+                  "data": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "2XX": {
+            "description": "Taken. Anything else is retried."
+          }
+        }
+      }
+    }
+  }
+}
