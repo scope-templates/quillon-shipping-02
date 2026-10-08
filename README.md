@@ -42,7 +42,8 @@ rest). A scan appends a tracking event, moves the parcel on unless it would move
 and queues `tracking.updated` for anybody listening. It is not on `/v1` and no shop sees it.
 
 Every call carries a key, `qp_test_` or `qp_live_`, and only ever sees its own account and its
-own mode: a live key asking for a parcel booked on the test key beside it gets `not_found`.
+own mode, except where Known issues in `CHANGELOG.md` says otherwise: a live key asking for a
+parcel booked on the test key beside it gets `not_found`.
 Every response carries `Quillon-Version`, and every `/v1` response what is left of the rate
 limit. Every refusal is a problem object `{type, title, status, detail, code}` and the `code` is
 the part to branch on.
@@ -86,9 +87,8 @@ and half a dozen parcels, built in `conftest.py`. The carriers and the rate card
 than the rest: one builds the whole bundled history and compares it with the committed file, and
 one loads that file into an empty database.
 
-One is marked as an expected failure. It shows one of the known issues at the top of
-`CHANGELOG.md`, carries that ticket's key in its reason, and is strict, so the fix that makes it
-pass has to take the marker off. How we work, ticket keys and all, is in `CONTRIBUTING.md`.
+One is a strict expected failure for a known issue listed at the top of `CHANGELOG.md`; see
+`CONTRIBUTING.md`.
 
 ## The data
 
