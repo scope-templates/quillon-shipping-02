@@ -43,6 +43,7 @@ def look_back(
     """The first answer, if this key has been here before. Raises when the body has changed."""
     if key is None:
         return None
+    # FIXME(QLN-47): keyed on the account and not the mode, so a test call replays on live.
     row = conn.execute(
         "SELECT method, path, body_hash, status_code, response_body, created_at "
         "FROM idempotency_keys WHERE customer_id = ? AND key = ?",

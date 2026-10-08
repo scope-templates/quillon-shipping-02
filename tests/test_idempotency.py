@@ -1,5 +1,7 @@
 """Idempotency-Key: a checkout that retries books one parcel, not two."""
 
+import pytest
+
 from conftest import PARCEL, RECIPIENT
 
 BODY = {
@@ -52,3 +54,21 @@ def test_a_cancel_sent_twice_under_one_key_stops_one_parcel_once(client, live):
     assert first.status_code == 200
     assert again.status_code == 200
     assert again.json()["cancelled_at"] == first.json()["cancelled_at"]
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="QLN-47: keys are kept per account, so a key used on the test key replays that "
+    "test parcel to the live one",
+)
+def test_a_key_used_on_the_test_side_books_afresh_on_the_live_side(client, live, sandbox):
+    on_test = client.post(
+        "/v1/shipments", headers={**sandbox, "Idempotency-Key": "order-10482"}, json=BODY
+    )
+    on_live = client.post(
+        "/v1/shipments", headers={**live, "Idempotency-Key": "order-10482"}, json=BODY
+    )
+    assert on_test.json()["mode"] == "test"
+    assert on_live.status_code == 201
+    assert on_live.json()["mode"] == "live"
+    assert "Quillon-Idempotent-Replay" not in on_live.headers
