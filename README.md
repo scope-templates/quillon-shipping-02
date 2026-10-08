@@ -86,6 +86,10 @@ and half a dozen parcels, built in `conftest.py`. The carriers and the rate card
 than the rest: one builds the whole bundled history and compares it with the committed file, and
 one loads that file into an empty database.
 
+One is marked as an expected failure. It shows one of the known issues at the top of
+`CHANGELOG.md`, carries that ticket's key in its reason, and is strict, so the fix that makes it
+pass has to take the marker off. How we work, ticket keys and all, is in `CONTRIBUTING.md`.
+
 ## The data
 
 `data/seed.json` is the year to the first of September 2026: 140 shops, 218 keys, 6,039 parcels,
