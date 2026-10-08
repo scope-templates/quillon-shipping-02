@@ -17,9 +17,9 @@ hundred calls a day, which is small enough that the four of us can run the whole
 - **Rates.** `POST /v1/rates/quotes` prices one parcel against every carrier that will take it,
   cheapest first, and holds each quote for half an hour. It works out the zone from the
   destination postcode and the chargeable weight from the box, so a big light parcel is priced
-  the way it will be invoiced. If nothing on the card will carry it — over thirty kilos, longer
-  than 120 cm on a side, or a service that does not go where you are sending it — that is a
-  refusal with `rate_unavailable` rather than a guess.
+  the way it will be invoiced. If nothing on the card will carry it — over thirty kilos by
+  weight or by size, longer than 120 cm on a side, or a service that does not go where you are
+  sending it — that is a refusal with `rate_unavailable` rather than a guess.
 - **Shipments.** `POST /v1/shipments` books the parcel, from a quote id or from a carrier and
   service named outright, and gives back an id, a tracking number and the price we will bill.
   `GET /v1/shipments/{id}` reads one back and `GET /v1/shipments` pages through them newest

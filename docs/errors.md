@@ -58,8 +58,11 @@ leave it off for the first page.
 ## `rate_unavailable`
 
 **422.** Nothing on the rate card will carry that parcel to that postcode: over 30 kg, longer
-than 120 cm on a side, or a service that does not go there. Quote it without naming a service
-and you will see what will take it.
+than 120 cm on a side, or a service that does not go there or does not take that weight. The
+weight is the chargeable weight, the greater of what the parcel weighs and what its size comes
+to, which is length by width by height in centimetres divided by 5,000, in kilos. A box 80 by 60
+by 50 cm counts as 48 kg however little is in it, and is refused. Quote it without naming a
+service and you will see what will take it.
 
 ## `quote_not_found`
 
