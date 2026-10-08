@@ -5,6 +5,24 @@ a time, a new one is announced to every technical contact six months before the 
 run side by side while everyone moves. Everything else here went out to everybody on the day it
 was deployed.
 
+## Known issues
+
+What we know is wrong with what is deployed, each with its ticket. An item comes off this list in
+the entry for the deploy that fixes it.
+
+- Idempotency keys are kept per account, not per account and mode. A key used on a `qp_test_`
+  key and then on the `qp_live_` key beside it, with the same body, answers the live call with
+  the test parcel, `"mode": "test"` and all, and books nothing live. Order numbers make good
+  keys, so a shop that tests its checkout on the order numbers it then goes live with can walk
+  into this. (QLN-47)
+- Webhook endpoints belong to the account, not to a mode. A parcel booked on a test key queues
+  its events for the same endpoints as a live one, and the body carries nothing that says which
+  it was; a test key can also list and delete the endpoints registered on the live one. (QLN-41)
+- Booking on a `quote_id` takes the quoted price without checking the parcel or the recipient's
+  postcode against what was quoted, and one quote books any number of parcels until it runs out.
+  A quote for a 500 g box to London will book a 14 kg box to IV23 at the same price, although
+  nothing on the card carries that parcel on that service. (QLN-38)
+
 ## **2026-08-01** — API version
 
 - `GET /v1/shipments/{id}/events`: the carrier's scans, oldest first, with the status the parcel
