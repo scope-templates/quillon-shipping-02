@@ -93,6 +93,7 @@ def next_attempt_at(attempts: int, since: Optional[str] = None) -> Optional[str]
 def endpoints_for(
     conn: sqlite3.Connection, customer_id: str, event_type: str
 ) -> List[Dict[str, Any]]:
+    # FIXME(QLN-41): endpoints have no mode, so test and live parcels post to the same endpoints.
     rows = conn.execute(
         "SELECT * FROM webhook_endpoints WHERE customer_id = ? AND status = 'active' "
         "ORDER BY created_at ASC, id ASC",
