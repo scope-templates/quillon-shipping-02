@@ -93,11 +93,7 @@ def record_billing_event(
             "received_at) VALUES (?, ?, ?, ?, ?, ?)",
             (event_id, event.customer_id, event.type, occurred_at, pack(data), now_stamp()),
         )
-        before = dict(
-            conn.execute(
-                "SELECT * FROM subscriptions WHERE customer_id = ?", (event.customer_id,)
-            ).fetchone()
-        )
+        before = billing.subscription_for(conn, event.customer_id)
         after = before
         if latest is None or occurred_at >= latest:
             after = billing.apply(before, event.type, occurred_at, data)

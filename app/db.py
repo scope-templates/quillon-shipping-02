@@ -6,6 +6,7 @@ from datetime import timedelta
 from pathlib import Path
 from typing import Dict, Iterator, Optional
 
+from app.billing import give_missing_subscriptions
 from app.ids import now, stamp
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -209,22 +210,9 @@ def connect(where: Optional[Path] = None) -> sqlite3.Connection:
     return conn
 
 
-# A shop without a subscription, as every shop is in a store from before they were kept, goes on
-# pay as you go, running since it joined, or cancelled if it is closed, until the billing
-# provider says otherwise.
-FIRST_SUBSCRIPTIONS = """
-INSERT INTO subscriptions (customer_id, plan, status, monthly_fee_pence, current_period_start,
-                           current_period_end, trial_ends_at, started_at, cancelled_at)
-SELECT c.id, 'payg', CASE c.status WHEN 'closed' THEN 'cancelled' ELSE 'active' END, 0, NULL,
-       NULL, NULL, c.created_at, NULL
-FROM customers c
-WHERE NOT EXISTS (SELECT 1 FROM subscriptions s WHERE s.customer_id = c.id)
-"""
-
-
 def prepare(conn: sqlite3.Connection) -> sqlite3.Connection:
     conn.executescript(SCHEMA)
-    conn.execute(FIRST_SUBSCRIPTIONS)
+    give_missing_subscriptions(conn)
     return conn
 
 

@@ -174,3 +174,46 @@ def test_a_store_from_before_subscriptions_gives_every_shop_one(tmp_path, monkey
     assert mine.json()["plan"] == "payg"
     assert mine.json()["status"] == "active"
     assert mine.json()["current_period_start"] is None
+
+
+def test_a_shop_added_while_the_service_runs_is_given_its_first_subscription(
+    client, conn, monkeypatch
+):
+    conn.executescript(
+        """
+        INSERT INTO customers (id, name, platform, city, contact_email, status, created_at)
+        VALUES ('cus_addedbyhandmarfield01', 'Marfield Kitchen', 'bramble', 'Marfield',
+                'hello@marfieldkitchen.co.uk', 'active', '2026-09-02T11:00:00Z'),
+               ('cus_addedbyhandpenhale001', 'Penhale Prints', 'tillbox', 'Penhale',
+                'shop@penhaleprints.co.uk', 'trialling', '2026-09-03T15:20:00Z');
+        INSERT INTO api_keys (key, customer_id, mode, label, created_at) VALUES
+            ('qp_live_addedbyhandmarfield01', 'cus_addedbyhandmarfield01', 'live', 'Production',
+             '2026-09-02T11:05:00Z'),
+            ('qp_test_addedbyhandpenhale001', 'cus_addedbyhandpenhale001', 'test', 'Integration',
+             '2026-09-03T15:20:00Z');
+        """
+    )
+    running = client.get(
+        "/v1/account", headers={"Authorization": "Bearer qp_live_addedbyhandmarfield01"}
+    )
+    assert running.status_code == 200
+    assert running.json()["plan"] == "payg"
+    assert running.json()["status"] == "active"
+    assert running.json()["current_period_start"] is None
+
+    trialling = client.get(
+        "/v1/account", headers={"Authorization": "Bearer qp_test_addedbyhandpenhale001"}
+    )
+    assert trialling.json()["status"] == "trialling"
+    assert trialling.json()["trial_ends_at"] == "2026-10-03T15:20:00Z"
+
+    monkeypatch.setenv("BILLING_SECRET", "billing-feed-secret-for-tests")
+    started = client.post(
+        "/billing/events",
+        headers={"Billing-Secret": "billing-feed-secret-for-tests"},
+        json={"type": "subscription.started", "customer_id": "cus_addedbyhandpenhale001",
+              "occurred_at": "2026-09-10T09:00:00Z", "data": {"plan": "standard"}},
+    )
+    assert started.status_code == 200
+    assert started.json()["moved"] is True
+    assert started.json()["status"] == "active"

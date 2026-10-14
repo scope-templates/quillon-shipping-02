@@ -5,12 +5,18 @@ from typing import Any, Dict
 
 from fastapi import APIRouter, Depends
 
+from app import billing
 from app.auth import Caller, caller
 from app.db import get_conn
 from app.ids import now, stamp
 from app.schemas import Account, problem_responses
 
 router = APIRouter(prefix="/v1", tags=["Account"])
+
+# What the account shows of its subscription.
+SUBSCRIPTION_FIELDS = (
+    "plan", "status", "current_period_start", "current_period_end", "trial_ends_at"
+)
 
 
 @router.get(
@@ -29,12 +35,10 @@ def get_account(
     The month is the calendar month in UTC, counted on the mode of the key: a test key sees its
     test parcels, which are never invoiced. A parcel cancelled before collection is not counted.
     """
-    row = conn.execute(
-        "SELECT c.id, c.name, c.platform, s.plan, s.status, s.current_period_start, "
-        "s.current_period_end, s.trial_ends_at "
-        "FROM customers c JOIN subscriptions s ON s.customer_id = c.id WHERE c.id = ?",
-        (who.customer_id,),
+    shop = conn.execute(
+        "SELECT id, name, platform FROM customers WHERE id = ?", (who.customer_id,)
     ).fetchone()
+    subscription = billing.subscription_for(conn, who.customer_id)
 
     today = now()
     month_start = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -45,7 +49,8 @@ def get_account(
         (who.customer_id, who.mode, stamp(month_start)),
     ).fetchone()
     return {
-        **dict(row),
+        **dict(shop),
+        **{field: subscription[field] for field in SUBSCRIPTION_FIELDS},
         "mode": who.mode,
         "this_month": {"month": today.strftime("%Y-%m"), **dict(month)},
     }

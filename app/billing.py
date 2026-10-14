@@ -11,6 +11,24 @@ from typing import Any, Dict, Optional
 from app.ids import read_stamp, stamp
 from app.plans import TRIAL_DAYS, TRIAL_PLAN, fee_for, one_month_on
 
+# A shop without a subscription, as every shop is in a store from before they were kept, goes on
+# pay as you go from the day it joined: cancelled if it is closed, trialling for thirty days from
+# then if it signed up as a trial, and running otherwise, until the billing provider says more.
+FIRST_SUBSCRIPTIONS = """
+INSERT INTO subscriptions (customer_id, plan, status, monthly_fee_pence, current_period_start,
+                           current_period_end, trial_ends_at, started_at, cancelled_at)
+SELECT c.id, :plan,
+       CASE c.status WHEN 'closed' THEN 'cancelled' WHEN 'trialling' THEN 'trialling'
+                     ELSE 'active' END,
+       :fee, NULL, NULL,
+       CASE c.status WHEN 'trialling'
+                     THEN strftime('%Y-%m-%dT%H:%M:%SZ', c.created_at, :trial) END,
+       c.created_at, NULL
+FROM customers c
+WHERE NOT EXISTS (SELECT 1 FROM subscriptions s WHERE s.customer_id = c.id)
+  AND (:customer_id IS NULL OR c.id = :customer_id)
+"""
+
 EVENT_TYPES = (
     "subscription.started",
     "subscription.plan_changed",
@@ -125,3 +143,26 @@ def save(conn: sqlite3.Connection, subscription: Dict[str, Any]) -> None:
         "UPDATE customers SET status = ? WHERE id = ?",
         (CUSTOMER_STATUS[subscription["status"]], subscription["customer_id"]),
     )
+
+
+def give_missing_subscriptions(conn: sqlite3.Connection, customer_id: Optional[str] = None) -> None:
+    """Every shop without a subscription gets its first one, or only the shop named."""
+    conn.execute(
+        FIRST_SUBSCRIPTIONS,
+        {
+            "plan": TRIAL_PLAN,
+            "fee": fee_for(TRIAL_PLAN),
+            "trial": f"+{TRIAL_DAYS} days",
+            "customer_id": customer_id,
+        },
+    )
+
+
+def subscription_for(conn: sqlite3.Connection, customer_id: str) -> Dict[str, Any]:
+    """The shop's subscription. A shop added since the store was opened is given its first one."""
+    query = "SELECT * FROM subscriptions WHERE customer_id = ?"
+    row = conn.execute(query, (customer_id,)).fetchone()
+    if row is None:
+        give_missing_subscriptions(conn, customer_id)
+        row = conn.execute(query, (customer_id,)).fetchone()
+    return dict(row)

@@ -10,6 +10,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from app.db import get_conn
 from app.errors import QuillonError
 from app.ids import now_stamp
+from app.billing import subscription_for
 from app.plans import TRIAL_PLAN
 
 KEY_PREFIXES = ("qp_test_", "qp_live_")
@@ -39,9 +40,8 @@ def mode_of(key: str) -> Optional[str]:
 def lookup(conn: sqlite3.Connection, key: str) -> Optional[Caller]:
     """The caller behind a key. Raises when the key is fine but the account is shut."""
     row = conn.execute(
-        "SELECT k.key, k.mode, k.customer_id, c.name, c.status, c.dispatch_address, s.plan "
-        "FROM api_keys k JOIN customers c ON c.id = k.customer_id "
-        "LEFT JOIN subscriptions s ON s.customer_id = c.id WHERE k.key = ?",
+        "SELECT k.key, k.mode, k.customer_id, c.name, c.status, c.dispatch_address "
+        "FROM api_keys k JOIN customers c ON c.id = k.customer_id WHERE k.key = ?",
         (key,),
     ).fetchone()
     if row is None:
@@ -57,7 +57,7 @@ def lookup(conn: sqlite3.Connection, key: str) -> Optional[Caller]:
         key=row["key"],
         mode=row["mode"],
         dispatch_address=row["dispatch_address"],
-        plan=row["plan"] or TRIAL_PLAN,
+        plan=subscription_for(conn, row["customer_id"])["plan"],
     )
 
 
