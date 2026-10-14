@@ -30,7 +30,7 @@ def quote(
     who: Caller = Depends(caller),
     conn: sqlite3.Connection = Depends(get_conn),
 ) -> Dict[str, Any]:
-    """Quotes for one parcel, cheapest first.
+    """Quotes for one parcel, cheapest first, at the price your plan pays.
 
     Quotes are held for half an hour and can be turned into a shipment by id, which is the only
     way to be sure the price a shopper saw at the checkout is the price we bill.
@@ -45,7 +45,7 @@ def quote(
 
     dimensions = body.dimensions_cm.as_tuple()
     lines = quote_lines(
-        conn, from_postcode, to_postcode, body.weight_grams, dimensions, body.service
+        conn, from_postcode, to_postcode, body.weight_grams, dimensions, body.service, who.plan
     )
     if not lines:
         raise QuillonError(

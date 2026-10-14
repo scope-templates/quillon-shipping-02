@@ -1,5 +1,8 @@
 """Pricing a parcel before anybody commits to it."""
 
+from app.plans import parcel_price
+from conftest import OTHER_KEY
+
 PARCEL = {
     "from_postcode": "BS1 4DJ",
     "to_postcode": "EC2A 4NE",
@@ -64,3 +67,16 @@ def test_the_carrier_list_names_all_four_and_their_services(client, live):
     ]
     services = {row["service"] for carrier in carriers for row in carrier["services"]}
     assert "next_day" in services and "economy" in services
+
+
+def test_a_plan_with_a_monthly_fee_takes_its_share_off_every_line(client, live):
+    def by_service(headers):
+        lines = quote(client, headers).json()["quotes"]
+        return {(line["carrier_code"], line["service"]): line["price_pence"] for line in lines}
+
+    on_standard = by_service(live)
+    on_payg = by_service({"Authorization": f"Bearer {OTHER_KEY}"})
+    assert set(on_standard) == set(on_payg)
+    for line, card in on_payg.items():
+        assert on_standard[line] == parcel_price("standard", card)
+        assert on_standard[line] < card

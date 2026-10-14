@@ -1,7 +1,8 @@
-"""Fixture world: three shops, their keys, six parcels, one webhook endpoint.
+"""Fixture world: three shops, their plans, their keys, six parcels, one webhook endpoint.
 
 Built here rather than loaded from data/seed.json so a test that turns on one parcel can be
-read. Carriers and the rate card come from app.rates, so prices in tests are real prices.
+read. Carriers and the rate card come from app.rates and the plans from app.plans, so prices in
+tests are real prices.
 """
 
 import json
@@ -12,6 +13,7 @@ from fastapi.testclient import TestClient
 from app import throttle
 from app.db import connect, prepare
 from app.main import app
+from app.plans import fee_for, parcel_price
 from app.rates import (
     CARRIERS,
     band_for,
@@ -107,9 +109,16 @@ SCANS = (
      "2026-08-29T09:05:00Z"),
 )
 
-# What the card charges for that parcel to EC2A, so a fixture price is a real price.
-KESTREL_STANDARD = price_on_card("kestrel", "standard", RECIPIENT, PARCEL)
-WENDOVER_ECONOMY = price_on_card("wendover", "economy", RECIPIENT, PARCEL)
+# Wistow is on standard and Netherby pays as it goes.
+SHOP_PLANS = {SHOP: "standard", OTHER_SHOP: "payg", CLOSED_SHOP: "standard"}
+
+# What each shop pays for that parcel to EC2A on its plan, so a fixture price is a real price.
+KESTREL_STANDARD = parcel_price(
+    SHOP_PLANS[SHOP], price_on_card("kestrel", "standard", RECIPIENT, PARCEL)
+)
+WENDOVER_ECONOMY = parcel_price(
+    SHOP_PLANS[OTHER_SHOP], price_on_card("wendover", "economy", RECIPIENT, PARCEL)
+)
 
 ENDPOINT_ID = "whe_wistow00000000000001"
 ENDPOINT_SECRET = "whsec_wistowprovisionshooksecret01"
@@ -141,6 +150,21 @@ def add_shops(conn):
             # closed account; the key is still in the table
             (CLOSED_KEY, CLOSED_SHOP, "live", "Production", "2024-08-01T09:10:00Z",
              "2026-02-11T16:30:00Z"),
+        ],
+    )
+    conn.executemany(
+        "INSERT INTO subscriptions (customer_id, plan, status, monthly_fee_pence, "
+        "current_period_start, current_period_end, trial_ends_at, started_at, cancelled_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        [
+            (SHOP, SHOP_PLANS[SHOP], "active", fee_for(SHOP_PLANS[SHOP]), "2026-08-04T10:00:00Z",
+             "2026-09-04T10:00:00Z", None, "2024-11-04T10:00:00Z", None),
+            (OTHER_SHOP, SHOP_PLANS[OTHER_SHOP], "active", fee_for(SHOP_PLANS[OTHER_SHOP]),
+             "2026-08-18T14:20:00Z", "2026-09-18T14:20:00Z", None, "2025-06-18T14:20:00Z",
+             None),
+            (CLOSED_SHOP, SHOP_PLANS[CLOSED_SHOP], "cancelled", fee_for(SHOP_PLANS[CLOSED_SHOP]),
+             "2026-02-01T09:00:00Z", "2026-03-01T09:00:00Z", None, "2024-08-01T09:00:00Z",
+             "2026-02-19T12:40:00Z"),
         ],
     )
 

@@ -55,7 +55,7 @@
           "Rates"
         ],
         "summary": "Price a parcel with every carrier that will take it",
-        "description": "Quotes for one parcel, cheapest first.\n\nQuotes are held for half an hour and can be turned into a shipment by id, which is the only\nway to be sure the price a shopper saw at the checkout is the price we bill.",
+        "description": "Quotes for one parcel, cheapest first, at the price your plan pays.\n\nQuotes are held for half an hour and can be turned into a shipment by id, which is the only\nway to be sure the price a shopper saw at the checkout is the price we bill.",
         "operationId": "quote_rates",
         "requestBody": {
           "content": {

@@ -4,6 +4,8 @@ import math
 import re
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
+from app.plans import TRIAL_PLAN, parcel_price
+
 # Outward code areas that are not simply "the mainland". Everything else falls to mainland.
 LONDON_AREAS = ("EC", "WC", "E", "N", "NW", "SE", "SW", "W")
 HIGHLAND_AREAS = ("AB", "IV", "KW", "PA", "PH")
@@ -198,17 +200,20 @@ def quote_lines(
     weight_grams: int,
     dimensions_cm: Sequence[float],
     service: Optional[str] = None,
+    plan: str = TRIAL_PLAN,
 ) -> List[Dict[str, Any]]:
-    """The quotes for one parcel. Empty when nothing on the card will take it."""
+    """The quotes for one parcel, at the shop's plan. Empty when nothing on the card takes it."""
     if max(dimensions_cm) > LONGEST_SIDE_CM:
         return []
     grams = chargeable_grams(weight_grams, dimensions_cm)
     lines = price_rows(conn, zone_for(to_postcode), grams, service)
     # Collecting outside the mainland costs the carriers more, and they pass it on.
     from_zone = zone_for(from_postcode)
-    if from_zone in ("highlands", "islands"):
-        loading = ZONE_LOADING[from_zone][0]
-        for line in lines:
+    far = from_zone in ("highlands", "islands")
+    for line in lines:
+        if far:
+            loading = ZONE_LOADING[from_zone][0]
             line["price_pence"] = int(round(line["price_pence"] * loading / 5.0)) * 5
-        lines.sort(key=lambda line: (line["price_pence"], line["carrier_code"]))
+        line["price_pence"] = parcel_price(plan, line["price_pence"])
+    lines.sort(key=lambda line: (line["price_pence"], line["carrier_code"]))
     return lines

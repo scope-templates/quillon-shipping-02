@@ -36,6 +36,19 @@ CREATE TABLE IF NOT EXISTS api_keys (
 );
 CREATE INDEX IF NOT EXISTS api_keys_by_customer ON api_keys(customer_id);
 
+-- One a shop. Moved on by what the billing provider posts to /billing/events.
+CREATE TABLE IF NOT EXISTS subscriptions (
+    customer_id          TEXT NOT NULL UNIQUE REFERENCES customers(id),
+    plan                 TEXT NOT NULL,
+    status               TEXT NOT NULL,
+    monthly_fee_pence    INTEGER NOT NULL,
+    current_period_start TEXT NOT NULL,
+    current_period_end   TEXT NOT NULL,
+    trial_ends_at        TEXT,
+    started_at           TEXT NOT NULL,
+    cancelled_at         TEXT
+);
+
 CREATE TABLE IF NOT EXISTS carriers (
     code              TEXT PRIMARY KEY,
     name              TEXT NOT NULL,

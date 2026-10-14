@@ -73,7 +73,7 @@ def price_from_quote(
 
 
 def price_from_card(
-    conn: sqlite3.Connection, body: ShipmentRequest, sender: Dict[str, Any]
+    conn: sqlite3.Connection, who: Caller, body: ShipmentRequest, sender: Dict[str, Any]
 ) -> Dict[str, Any]:
     if not body.carrier_code or not body.service:
         raise QuillonError(
@@ -89,6 +89,7 @@ def price_from_card(
         body.parcel.weight_grams,
         dimensions,
         body.service,
+        who.plan,
     )
     for line in lines:
         if line["carrier_code"] == body.carrier_code:
@@ -144,7 +145,7 @@ def create_shipment(
         carrier_code, service = quote["carrier_code"], quote["service"]
         price_pence = quote["price_pence"]
     else:
-        line = price_from_card(conn, body, sender)
+        line = price_from_card(conn, who, body, sender)
         carrier_code, service = line["carrier_code"], line["service"]
         price_pence = line["price_pence"]
 
