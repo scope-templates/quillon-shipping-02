@@ -4,15 +4,17 @@ We are a parcel company in Bristol that sells an API instead of a website. A sho
 asks us what a parcel will cost, books it, downloads the label and follows it to the door, and
 behind that we put it on whichever of our four carriers suits the size, the postcode and the
 day; the shop never has to know which. Tomasz and I started it in 2024 because we had both spent
-too long writing the same carrier integration twice, Ada looks after the shops and Callum writes
-the docs and the Python client. A hundred and forty shops are wired up to us and about sixty of
-them sent something last month; six thousand parcels went through us in the year to September, a
-third of them from one shop. With the quoting and the tracking on top of that it comes to a few
-hundred calls a day, which is small enough that the four of us can run the whole thing.
+too long writing the same carrier integration twice, Ada looks after the shops and keeps the
+ones she is talking to, from the first email to the ones who have stopped sending, in a
+spreadsheet of her own, and Callum writes the docs and the Python client. A hundred and forty
+shops are wired up to us and about sixty of them sent something last month; six thousand parcels
+went through us in the year to September, a third of them from one shop. With the quoting and the
+tracking on top of that it comes to a few hundred calls a day, which is small enough that the four
+of us can run the whole thing.
 
 ## What is in it
 
-`app/` is the service. Four resources, and what each one will not do:
+`app/` is the service. Five resources, and what each one will not do:
 
 - **Rates.** `POST /v1/rates/quotes` prices one parcel against every carrier that will take it,
   cheapest first, and holds each quote for half an hour. It works out the zone from the
@@ -35,11 +37,21 @@ hundred calls a day, which is small enough that the four of us can run the whole
   endpoint and empties what was still waiting for it.
 - **Carriers.** `GET /v1/carriers` is the four carriers and their services, so nobody has to
   hard-code them.
+- **Account.** `GET /v1/account` is the account behind the key and nothing else: its plan, where
+  its subscription stands, the period it is in, and the calendar month so far, which is the
+  parcels, the spend and the last booking on the key's own mode. The plan is `payg`, `standard`
+  or `volume`, and the two with a monthly fee take their share off every price on the card when
+  a parcel is quoted or booked.
 
 The carriers come in the other way. `POST /carriers/{code}/scans` is the feed they post to, one
 scan at a time, on a shared secret out of the environment (`CARRIER_SECRET_NORTHGATE` and the
 rest). A scan appends a tracking event, moves the parcel on unless it would move it backwards,
 and queues `tracking.updated` for anybody listening. It is not on `/v1` and no shop sees it.
+`POST /billing/events` is the same arrangement for the billing provider, on `BILLING_SECRET`:
+starts, plan changes, paid and failed invoices and cancellations, each kept, and each moving the
+shop's subscription unless it is older than one we already hold. And `POST /signups` is the form
+on the website, which needs no key: the shop starts a thirty-day trial on `payg` with one test
+key, and nothing ends the trial but a plan starting.
 
 Every call carries a key, `qp_test_` or `qp_live_`, and only ever sees its own account and its
 own mode, except where Known issues in `CHANGELOG.md` says otherwise: a live key asking for a
@@ -51,8 +63,9 @@ the part to branch on.
 The pieces underneath: `app/rates.py` is the zones, the bands and the card; `app/tracking.py` is
 the scan codes and what may still be stopped; `app/idempotency.py`, `app/pagination.py`,
 `app/auth.py`, `app/throttle.py` and `app/errors.py` are the things every endpoint shares;
-`app/labels.py` builds the PDF; `app/webhooks.py` signs and queues; `app/db.py` and
-`app/seed.py` open the store and fill it.
+`app/labels.py` builds the PDF; `app/webhooks.py` signs and queues; `app/plans.py` is the three
+plans and their fees; `app/billing.py` is what each billing event does to a subscription;
+`app/db.py` and `app/seed.py` open the store and fill it.
 
 ## Running locally
 
@@ -68,7 +81,7 @@ pick a key out of `api_keys` and you are away.
 
 `PUBLIC_BASE_URL` sets the host we put in label links, for when this is behind something, and
 `CARRIER_SECRET_<CODE>` is what a carrier has to send to post a scan. Without one set, that
-carrier's feed is closed.
+carrier's feed is closed. `BILLING_SECRET` is the same for the billing provider's feed.
 
 `python scripts/deliver_webhooks.py --loop` is the other half of a running service: it works
 through the delivery queue a minute at a time.
@@ -81,11 +94,11 @@ The interactive reference is at <http://127.0.0.1:8000/docs> and `GET /health` n
 python -m pytest
 ```
 
-The suite runs against a database of its own with a small world in it: three shops, their keys
-and half a dozen parcels, built in `conftest.py`. The carriers and the rate card come from
-`app/rates.py`, so a price in a test is a price we would really charge. Two of them are slower
-than the rest: one builds the whole bundled history and compares it with the committed file, and
-one loads that file into an empty database.
+The suite runs against a database of its own with a small world in it: three shops, their plans,
+their keys and half a dozen parcels, built in `conftest.py`. The carriers, the rate card and the
+plans come from `app/rates.py` and `app/plans.py`, so a price in a test is a price we would really
+charge. Two of them are slower than the rest: one builds the whole bundled history and compares
+it with the committed file, and one loads that file into an empty database.
 
 One is a strict expected failure for a known issue listed at the top of `CHANGELOG.md`; see
 `CONTRIBUTING.md`.
@@ -95,8 +108,11 @@ One is a strict expected failure for a known issue listed at the top of `CHANGEL
 `data/seed.json` is the year to the first of September 2026: 140 shops, 218 keys, 6,039 parcels,
 and the ninety days of scans still in retention, with the webhook endpoints and deliveries that
 go with them. November and January are the busy months and one shop is a third of the volume.
+Every shop has a subscription, and the billing provider's 753 events for the year are there
+behind them: 73 shops on `payg`, 47 on `standard` and 20 on `volume`; twelve signups from the
+last six weeks still trialling, eight past due and the six closed accounts cancelled.
 
-It is built by `python scripts/build_seed.py`, which runs off a fixed seed and writes the same
+It is built by `python scripts/build_seed.py`, which runs off fixed seeds and writes the same
 bytes every time; `--check` tells you whether the file still matches the script. The service
 loads it the first time it opens an empty database.
 
