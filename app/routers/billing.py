@@ -1,6 +1,5 @@
 """The feed the billing provider posts subscription and invoice events into. Not part of /v1."""
 
-import hmac
 import os
 import sqlite3
 from typing import Any, Dict, Optional
@@ -13,6 +12,7 @@ from app.errors import QuillonError
 from app.ids import new_id, now_stamp, read_stamp, stamp
 from app.plans import PLANS
 from app.records import pack
+from app.routers.scans import secret_matches
 from app.schemas import BillingEvent, BillingReceipt, problem_responses
 
 router = APIRouter(tags=["Billing feed"])
@@ -22,10 +22,7 @@ SECRET_HEADER = "Billing-Secret"
 
 
 def check_secret(given: Optional[str]) -> None:
-    wanted = os.environ.get(SECRET_VARIABLE)
-    if not wanted or not given or not hmac.compare_digest(
-        given.strip().encode("utf-8", "replace"), wanted.encode("utf-8")
-    ):
+    if not secret_matches(os.environ.get(SECRET_VARIABLE), given):
         raise QuillonError(
             "invalid_billing_secret",
             f"Send the secret we set up with the billing provider as {SECRET_HEADER}.",
@@ -84,28 +81,33 @@ def record_billing_event(
     if customer is None:
         raise QuillonError("not_found", f"No shop of ours with the id {event.customer_id}.")
 
-    latest = conn.execute(
-        "SELECT MAX(occurred_at) FROM billing_events WHERE customer_id = ?",
-        (event.customer_id,),
-    ).fetchone()[0]
     event_id = new_id("billing_event")
-    conn.execute(
-        "INSERT INTO billing_events (id, customer_id, type, occurred_at, payload, received_at) "
-        "VALUES (?, ?, ?, ?, ?, ?)",
-        (event_id, event.customer_id, event.type, occurred_at, pack(data), now_stamp()),
-    )
-
-    before = dict(
+    conn.execute("BEGIN IMMEDIATE")
+    try:
+        latest = conn.execute(
+            "SELECT MAX(occurred_at) FROM billing_events WHERE customer_id = ?",
+            (event.customer_id,),
+        ).fetchone()[0]
         conn.execute(
-            "SELECT * FROM subscriptions WHERE customer_id = ?", (event.customer_id,)
-        ).fetchone()
-    )
-    after = before
-    if latest is None or occurred_at >= latest:
-        after = billing.apply(before, event.type, occurred_at, data)
-    moved = after != before
-    if moved:
-        billing.save(conn, after)
+            "INSERT INTO billing_events (id, customer_id, type, occurred_at, payload, "
+            "received_at) VALUES (?, ?, ?, ?, ?, ?)",
+            (event_id, event.customer_id, event.type, occurred_at, pack(data), now_stamp()),
+        )
+        before = dict(
+            conn.execute(
+                "SELECT * FROM subscriptions WHERE customer_id = ?", (event.customer_id,)
+            ).fetchone()
+        )
+        after = before
+        if latest is None or occurred_at >= latest:
+            after = billing.apply(before, event.type, occurred_at, data)
+        moved = after != before
+        if moved:
+            billing.save(conn, after)
+        conn.execute("COMMIT")
+    except Exception:
+        conn.execute("ROLLBACK")
+        raise
     return {
         "id": event_id,
         "customer_id": event.customer_id,

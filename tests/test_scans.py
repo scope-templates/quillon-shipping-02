@@ -79,6 +79,13 @@ def test_a_scan_without_the_right_secret_goes_nowhere(client, carrier):
     bare = client.post(FEED, json=scan("collected", "2026-09-01T16:40:00Z"))
     assert bare.status_code == 401
 
+    garbled = client.post(
+        FEED,
+        headers={"Authorization": f"Bearer {SECRET}é".encode("latin-1")},
+        json=scan("collected", "2026-09-01T16:40:00Z"),
+    )
+    assert garbled.status_code == 401
+
     # The secret is per carrier, and Wendover has none set at all.
     elsewhere = client.post(
         "/carriers/wendover/scans",

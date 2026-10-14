@@ -1,5 +1,6 @@
 """The feed the carriers post scans into. Not part of /v1 and not for shops."""
 
+import hmac
 import os
 import sqlite3
 from typing import Any, Dict, Optional
@@ -25,9 +26,18 @@ def secret_for(carrier_code: str) -> Optional[str]:
     return os.environ.get(f"{SECRET_PREFIX}{carrier_code.upper()}")
 
 
+def secret_matches(wanted: Optional[str], given: Optional[str]) -> bool:
+    """The secret check for both feeds that come in from outside, the carriers' and billing's.
+
+    Bytes compared in constant time, so a stray byte in a header is a refusal like any other.
+    """
+    if not wanted or not given:
+        return False
+    return hmac.compare_digest(given.strip().encode("utf-8", "replace"), wanted.encode("utf-8"))
+
+
 def check_secret(carrier_code: str, given: Optional[str]) -> None:
-    wanted = secret_for(carrier_code)
-    if not wanted or not given or given.strip() != wanted:
+    if not secret_matches(secret_for(carrier_code), given):
         raise QuillonError(
             "invalid_carrier_secret",
             f"Send the secret we gave you for {carrier_code} as "
