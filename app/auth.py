@@ -46,7 +46,7 @@ def lookup(conn: sqlite3.Connection, key: str) -> Optional[Caller]:
     ).fetchone()
     if row is None:
         return None
-    if row["status"] != "active":
+    if row["status"] == "closed":
         raise QuillonError(
             "account_closed",
             "This account is closed. Write to support@quillonpost.co.uk if that is a surprise.",

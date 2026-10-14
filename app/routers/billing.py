@@ -54,21 +54,6 @@ def check_plan(event: BillingEvent) -> None:
         )
 
 
-def write(conn: sqlite3.Connection, subscription: Dict[str, Any]) -> None:
-    fields = billing.FIELDS
-    conn.execute(
-        f"INSERT INTO subscriptions ({', '.join(fields)}) "
-        f"VALUES ({', '.join('?' for _ in fields)}) "
-        "ON CONFLICT(customer_id) DO UPDATE SET "
-        + ", ".join(f"{field} = excluded.{field}" for field in fields[1:]),
-        tuple(subscription[field] for field in fields),
-    )
-    conn.execute(
-        "UPDATE customers SET status = ? WHERE id = ?",
-        (billing.CUSTOMER_STATUS[subscription["status"]], subscription["customer_id"]),
-    )
-
-
 @router.post(
     "/billing/events",
     response_model=BillingReceipt,
@@ -118,7 +103,7 @@ def record_billing_event(
         after = billing.apply(before, event.customer_id, event.type, occurred_at, event.data)
     moved = after is not None and after != before
     if moved:
-        write(conn, after)
+        billing.save(conn, after)
     return {
         "id": event_id,
         "customer_id": event.customer_id,

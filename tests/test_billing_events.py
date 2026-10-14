@@ -41,12 +41,7 @@ def add_trialling_shop(conn):
         "'trialling', '2026-08-20T10:12:00Z')",
         (NEW_SHOP,),
     )
-    trial = billing.trial(NEW_SHOP, read_stamp("2026-08-20T10:12:00Z"))
-    conn.execute(
-        f"INSERT INTO subscriptions ({', '.join(billing.FIELDS)}) "
-        f"VALUES ({', '.join('?' for _ in billing.FIELDS)})",
-        tuple(trial[field] for field in billing.FIELDS),
-    )
+    billing.save(conn, billing.trial(NEW_SHOP, read_stamp("2026-08-20T10:12:00Z")))
 
 
 def test_the_feed_is_closed_without_the_secret(client, monkeypatch):

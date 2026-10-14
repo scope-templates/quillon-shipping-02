@@ -267,6 +267,57 @@ class ScanReceipt(BaseModel):
     recorded: bool = Field(description="False when this scan was already on the parcel.")
 
 
+class SignupRequest(BaseModel):
+    """What the form on the website asks a shop for."""
+
+    shop_name: str = Field(min_length=1, max_length=120)
+    contact_email: EmailStr
+    platform: str = Field(
+        min_length=1,
+        max_length=40,
+        description="What the shop's checkout runs on, or `own build`.",
+    )
+    city: str = Field(min_length=1, max_length=80)
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "shop_name": "Saltmarsh Woollens",
+                "contact_email": "hello@saltmarshwoollens.co.uk",
+                "platform": "marketside",
+                "city": "Saltmarsh",
+            }
+        }
+    )
+
+
+class Customer(BaseModel):
+    id: str
+    name: str
+    platform: str
+    city: str
+    contact_email: str
+    status: Literal["trialling", "active", "closed"]
+    created_at: str
+
+
+class Subscription(BaseModel):
+    plan: Literal[tuple(PLANS)]  # type: ignore[valid-type]
+    status: Literal[SUBSCRIPTION_STATUSES]  # type: ignore[valid-type]
+    monthly_fee_pence: int
+    current_period_start: str
+    current_period_end: str
+    trial_ends_at: Optional[str] = None
+    started_at: str
+    cancelled_at: Optional[str] = None
+
+
+class Signup(BaseModel):
+    customer: Customer
+    subscription: Subscription
+    key: str = Field(description="A qp_test_ key, shown once, here. Keep it.")
+
+
 class BillingEvent(BaseModel):
     """One event as the billing provider posts it to us."""
 

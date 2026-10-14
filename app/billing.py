@@ -4,6 +4,7 @@ The provider is where the card is and where the invoices are raised; we keep a c
 shop stands so the API can answer without asking it.
 """
 
+import sqlite3
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 
@@ -108,3 +109,18 @@ def period_from(occurred_at: str) -> Dict[str, str]:
         "current_period_start": occurred_at,
         "current_period_end": stamp(one_month_on(read_stamp(occurred_at))),
     }
+
+
+def save(conn: sqlite3.Connection, subscription: Dict[str, Any]) -> None:
+    """Keep the subscription in place of the last one, with the customer status it goes with."""
+    conn.execute(
+        f"INSERT INTO subscriptions ({', '.join(FIELDS)}) "
+        f"VALUES ({', '.join('?' for _ in FIELDS)}) "
+        "ON CONFLICT(customer_id) DO UPDATE SET "
+        + ", ".join(f"{field} = excluded.{field}" for field in FIELDS[1:]),
+        tuple(subscription[field] for field in FIELDS),
+    )
+    conn.execute(
+        "UPDATE customers SET status = ? WHERE id = ?",
+        (CUSTOMER_STATUS[subscription["status"]], subscription["customer_id"]),
+    )

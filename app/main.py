@@ -13,7 +13,16 @@ from app import API_VERSION, SERVICE_VERSION, spec, throttle
 from app.auth import mode_of
 from app.db import connect, get_conn, open_store
 from app.errors import MEDIA_TYPE, QuillonError
-from app.routers import billing, carriers, labels, rates, scans, shipments, webhooks
+from app.routers import (
+    billing,
+    carriers,
+    labels,
+    rates,
+    scans,
+    shipments,
+    signups,
+    webhooks,
+)
 from app.schemas import Health
 
 VERSION_HEADER = "Quillon-Version"
@@ -35,6 +44,7 @@ TAGS = [
     {"name": "Webhooks", "description": "Being told about a parcel instead of asking."},
     {"name": "Carriers", "description": "Who we route to and what they sell."},
     {"name": "Labels", "description": "The PDF behind a label link."},
+    {"name": "Signups", "description": "A new shop from the form on the website."},
     {"name": "Service", "description": "Is it up."},
 ]
 
@@ -96,8 +106,8 @@ async def not_there(request: Request, error: StarletteHTTPException) -> JSONResp
 def counted_as(request: Request):
     """Which bucket this call comes out of, and how much that bucket is allowed.
 
-    A key only counts as itself once it names a live account: anything else, whatever it is
-    prefixed with, is counted against the address it arrived from.
+    A key only counts as itself once it names an open account, trialling or not: anything else,
+    whatever it is prefixed with, is counted against the address it arrived from.
     """
     header = request.headers.get("authorization", "")
     key = header[7:].strip() if header.lower().startswith("bearer ") else ""
@@ -106,7 +116,7 @@ def counted_as(request: Request):
         try:
             row = conn.execute(
                 "SELECT k.mode FROM api_keys k JOIN customers c ON c.id = k.customer_id "
-                "WHERE k.key = ? AND c.status = 'active'",
+                "WHERE k.key = ? AND c.status != 'closed'",
                 (key,),
             ).fetchone()
         finally:
@@ -169,6 +179,7 @@ app.include_router(shipments.router)
 app.include_router(webhooks.router)
 app.include_router(carriers.router)
 app.include_router(labels.router)
+app.include_router(signups.router)
 app.include_router(scans.router)
 app.include_router(billing.router)
 

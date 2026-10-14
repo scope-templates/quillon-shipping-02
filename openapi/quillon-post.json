@@ -3066,6 +3066,115 @@
         }
       }
     },
+    "/signups": {
+      "post": {
+        "tags": [
+          "Signups"
+        ],
+        "summary": "Sign a shop up for a trial",
+        "description": "No key needed: this is what the form on the website posts.\n\nThe shop starts trialling on pay as you go, with one test key that comes back once, here.\nLive keys are set up by hand when the shop signs.",
+        "operationId": "create_signup",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Signup"
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The request body will not do",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "examples": {
+                  "validation_failed": {
+                    "summary": "The request body will not do",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#validation_failed",
+                      "title": "The request body will not do",
+                      "status": 422,
+                      "detail": "The request body will not do",
+                      "code": "validation_failed"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "That email address already has an account",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "examples": {
+                  "email_in_use": {
+                    "summary": "That email address already has an account",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#email_in_use",
+                      "title": "That email address already has an account",
+                      "status": 409,
+                      "detail": "That email address already has an account",
+                      "code": "email_in_use"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/carriers/{carrier_code}/scans": {
       "post": {
         "tags": [
@@ -3765,6 +3874,54 @@
         ],
         "title": "Carriers"
       },
+      "Customer": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "platform": {
+            "type": "string",
+            "title": "Platform"
+          },
+          "city": {
+            "type": "string",
+            "title": "City"
+          },
+          "contact_email": {
+            "type": "string",
+            "title": "Contact Email"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "trialling",
+              "active",
+              "closed"
+            ],
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "platform",
+          "city",
+          "contact_email",
+          "status",
+          "created_at"
+        ],
+        "title": "Customer"
+      },
       "Dimensions": {
         "properties": {
           "length_cm": {
@@ -4335,6 +4492,142 @@
           "reference": "WEB-10482"
         }
       },
+      "Signup": {
+        "properties": {
+          "customer": {
+            "$ref": "#/components/schemas/Customer"
+          },
+          "subscription": {
+            "$ref": "#/components/schemas/Subscription"
+          },
+          "key": {
+            "type": "string",
+            "title": "Key",
+            "description": "A qp_test_ key, shown once, here. Keep it."
+          }
+        },
+        "type": "object",
+        "required": [
+          "customer",
+          "subscription",
+          "key"
+        ],
+        "title": "Signup"
+      },
+      "SignupRequest": {
+        "properties": {
+          "shop_name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Shop Name"
+          },
+          "contact_email": {
+            "type": "string",
+            "format": "email",
+            "title": "Contact Email"
+          },
+          "platform": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Platform",
+            "description": "What the shop's checkout runs on, or `own build`."
+          },
+          "city": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "City"
+          }
+        },
+        "type": "object",
+        "required": [
+          "shop_name",
+          "contact_email",
+          "platform",
+          "city"
+        ],
+        "title": "SignupRequest",
+        "description": "What the form on the website asks a shop for.",
+        "example": {
+          "city": "Saltmarsh",
+          "contact_email": "hello@saltmarshwoollens.co.uk",
+          "platform": "marketside",
+          "shop_name": "Saltmarsh Woollens"
+        }
+      },
+      "Subscription": {
+        "properties": {
+          "plan": {
+            "type": "string",
+            "enum": [
+              "payg",
+              "standard",
+              "volume"
+            ],
+            "title": "Plan"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "trialling",
+              "active",
+              "past_due",
+              "cancelled"
+            ],
+            "title": "Status"
+          },
+          "monthly_fee_pence": {
+            "type": "integer",
+            "title": "Monthly Fee Pence"
+          },
+          "current_period_start": {
+            "type": "string",
+            "title": "Current Period Start"
+          },
+          "current_period_end": {
+            "type": "string",
+            "title": "Current Period End"
+          },
+          "trial_ends_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trial Ends At"
+          },
+          "started_at": {
+            "type": "string",
+            "title": "Started At"
+          },
+          "cancelled_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cancelled At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "plan",
+          "status",
+          "monthly_fee_pence",
+          "current_period_start",
+          "current_period_end",
+          "started_at"
+        ],
+        "title": "Subscription"
+      },
       "TrackingEvent": {
         "properties": {
           "code": {
@@ -4619,6 +4912,10 @@
     {
       "name": "Labels",
       "description": "The PDF behind a label link."
+    },
+    {
+      "name": "Signups",
+      "description": "A new shop from the form on the website."
     },
     {
       "name": "Service",
