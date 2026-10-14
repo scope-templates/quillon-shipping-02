@@ -89,7 +89,7 @@ def test_an_email_that_already_has_an_account_is_refused(client, conn):
     assert again.json()["code"] == "email_in_use"
     assert "hello@saltmarshwoollens.co.uk" in again.json()["detail"]
 
-    # A shop Ada set up by hand counts too.
+    # A shop we set up by hand counts too.
     existing = client.post(
         "/signups", json={**FORM, "contact_email": "orders@wistowprovisions.co.uk"}
     )

@@ -62,15 +62,15 @@ SENDER_ON_EVERY_PARCEL_UNTIL = date(2026, 4, 2)
 TRIALLING_SHOPS = 12
 SIGNUP_WINDOW_DAYS = 42
 # Plans: the busiest live shops on volume, the rest of the live ones on standard bar most of the
-# quietest, and the shops that never went live on pay as you go bar a few that signed lately.
+# smallest, and the shops that never went live on pay as you go bar a few that signed lately.
 VOLUME_SHOPS = 18
-QUIET_TAIL = 9
+SMALLEST_TAIL = 9
 PAYG_IN_THE_TAIL = 6
 IDLE_ON_STANDARD = 9
 CLOSED_PLANS = ("volume", "volume", "standard", "standard", "payg", "payg")
 # Invoices in the last two months that the card did not pay, and nothing paid since.
 PAST_DUE_SENDING = 5
-PAST_DUE_QUIET = 3
+PAST_DUE_SENT_NOTHING = 3
 PAST_DUE_WITHIN_DAYS = 60
 # Failed payments earlier in the year that the card paid a few days on, two of which reached
 # us after the payment that settled them.
@@ -942,7 +942,7 @@ def choose_plans(paper, shops, keys, shipments):
     final = {}
     for index, shop in enumerate(live):
         final[shop["id"]] = "volume" if index < VOLUME_SHOPS else "standard"
-    for shop in paper.sample(live[-QUIET_TAIL:], PAYG_IN_THE_TAIL):
+    for shop in paper.sample(live[-SMALLEST_TAIL:], PAYG_IN_THE_TAIL):
         final[shop["id"]] = "payg"
     for shop, plan in zip(closed, paper.sample(CLOSED_PLANS, len(CLOSED_PLANS))):
         final[shop["id"]] = plan
@@ -960,9 +960,9 @@ def choose_plans(paper, shops, keys, shipments):
         )
         history[shop["id"]] = [(started[shop["id"]], final[shop["id"]])]
     for shop in closed:
-        quiet_from = max(last_activity(shop, keys, shipments), YEAR_FROM, started[shop["id"]])
+        last_seen = max(last_activity(shop, keys, shipments), YEAR_FROM, started[shop["id"]])
         cancelled[shop["id"]] = min(
-            moment_between(paper, quiet_from + timedelta(days=2), quiet_from + timedelta(days=28)),
+            moment_between(paper, last_seen + timedelta(days=2), last_seen + timedelta(days=28)),
             AS_OF - timedelta(days=1),
         )
 
@@ -1087,11 +1087,13 @@ def build_billing(paper, shops, keys, shipments):
     live = [shop for shop in shops if shop["_live"]]
     paying = [shop for shop in live[1:] if fee_for(plan_at(history[shop["id"]], AS_OF))]
     sending = [shop for shop in paying if last_parcel[shop["id"]] >= AS_OF - timedelta(days=7)]
-    quiet = [shop for shop in paying if last_parcel[shop["id"]] <= AS_OF - timedelta(days=21)]
-    gone_quiet = paper.sample(quiet, min(PAST_DUE_QUIET, len(quiet)))
-    still_sending = paper.sample(sending, PAST_DUE_SENDING + PAST_DUE_QUIET - len(gone_quiet))
+    idle = [shop for shop in paying if last_parcel[shop["id"]] <= AS_OF - timedelta(days=21)]
+    sent_nothing_lately = paper.sample(idle, min(PAST_DUE_SENT_NOTHING, len(idle)))
+    still_sending = paper.sample(
+        sending, PAST_DUE_SENDING + PAST_DUE_SENT_NOTHING - len(sent_nothing_lately)
+    )
     unpaid = {}
-    for shop in still_sending + gone_quiet:
+    for shop in still_sending + sent_nothing_lately:
         recent = [
             invoice["due"] for invoice in walk(shop)
             if invoice["due"] >= AS_OF - timedelta(days=PAST_DUE_WITHIN_DAYS)
@@ -1134,7 +1136,7 @@ def build_billing(paper, shops, keys, shipments):
             }
         )
 
-    tried_again = {shop["id"] for shop in gone_quiet}
+    tried_again = {shop["id"] for shop in sent_nothing_lately}
     for number, invoice in enumerate(invoices, start=1):
         data = {"invoice": f"QP-{number:05d}", **invoice["data"]}
         for attempt, (kind, when) in enumerate(invoice["attempts"], start=1):
@@ -1181,7 +1183,7 @@ def build_billing(paper, shops, keys, shipments):
     for shop in shops:
         subscription = billing.trial(shop["id"], read_stamp(shop["created_at"]))
         if shop["status"] != "trialling":
-            # The shops Ada signed by hand had no trial to end.
+            # The shops we signed by hand had no trial to end.
             subscription["trial_ends_at"] = None
             latest = None
             for row in sorted(by_shop[shop["id"]], key=lambda row: (row["received_at"], row["id"])):

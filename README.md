@@ -4,13 +4,13 @@ We are a parcel company in Bristol that sells an API instead of a website. A sho
 asks us what a parcel will cost, books it, downloads the label and follows it to the door, and
 behind that we put it on whichever of our four carriers suits the size, the postcode and the
 day; the shop never has to know which. Tomasz and I started it in 2024 because we had both spent
-too long writing the same carrier integration twice, Ada looks after the shops and keeps the
-ones she is talking to, from the first email to the ones who have stopped sending, in a
-spreadsheet of her own, and Callum writes the docs and the Python client. A hundred and forty
-shops are wired up to us and about sixty of them sent something last month; six thousand parcels
-went through us in the year to September, a third of them from one shop. With the quoting and the
-tracking on top of that it comes to a few hundred calls a day, which is small enough that the four
-of us can run the whole thing.
+too long writing the same carrier integration twice. I look after the shops myself and keep the
+ones I am talking to in a spreadsheet of my own; Ada runs the integrations and answers support,
+and Callum writes the docs and the Python client. A hundred and forty shops are wired up to us
+and about sixty of them sent something last month; six thousand parcels went through us in the
+year to September, a third of them from one shop. With the quoting and the tracking on top of
+that it comes to a few hundred calls a day, which is small enough that the four of us can run the
+whole thing.
 
 ## What is in it
 

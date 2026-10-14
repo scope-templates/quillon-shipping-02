@@ -9,7 +9,7 @@ Authorization: Bearer qp_live_8zkdbmhybs5zpfwzwz5kzqvt
 ```
 
 Keys are issued per account, not per person. A signup on the website comes with one test key;
-Ada sets up the live ones when you sign, and you can write to support@quillonpost.co.uk if you
+we set up the live ones when you sign, and you can write to support@quillonpost.co.uk if you
 want another.
 
 ## Test and live
