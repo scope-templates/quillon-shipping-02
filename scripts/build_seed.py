@@ -1,11 +1,16 @@
-"""Builds data/seed.json: shops, keys, a year of parcels and the scans still in retention.
+"""Builds data/seed.json: shops, keys, a year of parcels and the scans still in retention, and
+every shop's subscription with the billing provider's year of events behind it.
 
-One seeded Random throughout, so a second run writes the same bytes. `--check` compares the
-committed file with what this script builds. Prices come off app.rates, so a seeded price is one
-the quote endpoint would give, and a parcel's status is whatever its last scan makes it.
+Two seeded Randoms, one for the shops and the parcels and one for the subscriptions and the
+billing, so a second run writes the same bytes. `--check` compares the committed file with what
+this script builds. Prices come off app.rates and app.plans, so a seeded price is one the quote
+endpoint would have given on the plan the shop was on that day; a parcel's status is whatever its
+last scan makes it, and a subscription is whatever app.billing makes of its events in the order
+they arrived.
 """
 
 import argparse
+import bisect
 import json
 import random
 import sys
@@ -22,10 +27,13 @@ from app.rates import (  # noqa: E402
     chargeable_grams,
     service_rows,
 )
+from app import billing  # noqa: E402
 from app.ids import ALPHABET as ID_ALPHABET  # noqa: E402
+from app.plans import TRIAL_PLAN, fee_for, one_month_on, parcel_price  # noqa: E402
 from app.tracking import status_after  # noqa: E402
 
 SEED = 20260901
+BILLING_SEED = 20260714
 OUT = Path(__file__).resolve().parent.parent / "data" / "seed.json"
 
 # Snapshot: 06:00 UTC on 1 September 2026. Nothing in the file is later than this.
@@ -47,6 +55,40 @@ SCAN_RETENTION_DAYS = 90
 BLUECOAT_FROM = date(2026, 7, 22)
 REFERENCE_RULE_FROM = date(2026, 6, 9)
 SENDER_ON_EVERY_PARCEL_UNTIL = date(2026, 4, 2)
+
+# The shops that came in through the form on the website and are still trialling.
+TRIALLING_SHOPS = 12
+SIGNUP_WINDOW_DAYS = 42
+# Plans: the busiest live shops on volume, the rest of the live ones on standard bar most of the
+# quietest, and the shops that never went live on pay as you go bar a few that signed lately.
+VOLUME_SHOPS = 18
+QUIET_TAIL = 9
+PAYG_IN_THE_TAIL = 6
+IDLE_ON_STANDARD = 9
+CLOSED_PLANS = ("volume", "volume", "standard", "standard", "payg", "payg")
+# Invoices in the last two months that the card did not pay, and nothing paid since.
+PAST_DUE_SENDING = 5
+PAST_DUE_QUIET = 3
+PAST_DUE_WITHIN_DAYS = 60
+# Failed payments earlier in the year that the card paid a few days on, two of which reached
+# us after the payment that settled them.
+RECOVERED_FAILURES = 7
+LATE_ARRIVALS = 2
+
+FAIL_WORDING = (
+    "The card was declined",
+    "Not enough in the account",
+    "The card on file has expired",
+    "The bank asked for the payment to be authorised and it was not",
+)
+CANCEL_WORDING = (
+    "Closing the shop at the end of the season",
+    "Moving to a carrier account of their own",
+    "The marketplace they sell on books its own delivery now",
+    "Business sold; the new owners have their own arrangements",
+    "Stopped selling online",
+    "Too few parcels to be worth the monthly fee",
+)
 
 # November and January are the two peaks.
 MONTH_WEIGHT = {
@@ -164,7 +206,7 @@ CONTENTS = (
     "Ink cartridges", "Soap, gift set", "Tea, loose leaf, two tins",
     "Bicycle bell and lights", "Cushion cover", "Chopping board", "Notebook and pen",
     "Candle, large", "Leather belt", "Toy train and track", "Spare filter",
-    "Two mugs, wrapped", "Enamel plate", "Dog lead", "Watercolour paper",
+    "Two mugs, wrapped", "Enamel plate", "Dog collar", "Watercolour paper",
     "Bird feeder", "Jigsaw, 1000 piece", "Apron", "Lavender bags", "Kitchen scales",
     "Pot of paint, tester", None, None, None,
 )
@@ -828,23 +870,358 @@ def build_webhooks(rng, shops, shipments):
     return endpoints, deliveries
 
 
+# ------------------------------------------------------------------- the plans and the billing
+
+YEAR_FROM = datetime(FIRST_DAY.year, FIRST_DAY.month, FIRST_DAY.day, tzinfo=timezone.utc)
+
+
+def parse(text):
+    return datetime.fromisoformat(text.replace("Z", "+00:00"))
+
+
+def moment_between(paper, first, last):
+    """A time between the two, in working hours, for something a person did."""
+    days = max((last - first).days, 0)
+    day = first + timedelta(days=paper.randint(0, days))
+    return day.replace(hour=paper.randint(8, 18), minute=paper.randint(0, 59),
+                       second=paper.randint(0, 59))
+
+
+def sign_up_recently(paper, shops):
+    """A dozen shops that never went live came in through the website in the last six weeks.
+
+    The form refuses an email address that already has an account, so none of them shares one.
+    """
+    emails = [shop["contact_email"] for shop in shops]
+    idle = [
+        shop for shop in shops
+        if not shop["_live"] and shop["status"] == "active"
+        and emails.count(shop["contact_email"]) == 1
+    ]
+    for shop in paper.sample(idle, TRIALLING_SHOPS):
+        shop["_joined"] = LAST_DAY - timedelta(days=paper.randint(0, SIGNUP_WINDOW_DAYS - 1))
+        shop["status"] = "trialling"
+
+
+def date_signups(shops, keys):
+    """A signup and its test key are made in the same moment."""
+    made = {row["customer_id"]: row["created_at"] for row in keys}
+    for shop in shops:
+        if shop["status"] == "trialling":
+            shop["created_at"] = made[shop["id"]]
+
+
+def last_activity(shop, keys, shipments):
+    stamps = [shop["created_at"]]
+    for row in keys:
+        if row["customer_id"] == shop["id"]:
+            stamps.extend(value for value in (row["created_at"], row["last_used_at"]) if value)
+    stamps.extend(row["created_at"] for row in shipments if row["customer_id"] == shop["id"])
+    return parse(max(stamps))
+
+
+def plan_at(history, when):
+    """The plan in force at a moment: before the subscription started, the trial's."""
+    plan = TRIAL_PLAN
+    for since, named in history:
+        if since <= when:
+            plan = named
+    return plan
+
+
+def choose_plans(paper, shops, keys, shipments):
+    """Each shop's start, the plans it has been on and when, and when it cancelled if it did."""
+    live = [shop for shop in shops if shop["_live"]]
+    closed = [shop for shop in shops if shop["status"] == "closed"]
+    idle = [shop for shop in shops if not shop["_live"] and shop["status"] == "active"]
+
+    final = {}
+    for index, shop in enumerate(live):
+        final[shop["id"]] = "volume" if index < VOLUME_SHOPS else "standard"
+    for shop in paper.sample(live[-QUIET_TAIL:], PAYG_IN_THE_TAIL):
+        final[shop["id"]] = "payg"
+    for shop, plan in zip(closed, paper.sample(CLOSED_PLANS, len(CLOSED_PLANS))):
+        final[shop["id"]] = plan
+    lately = sorted(idle, key=lambda shop: (shop["_joined"], shop["id"]))[-3 * IDLE_ON_STANDARD:]
+    on_standard = {shop["id"] for shop in paper.sample(lately, IDLE_ON_STANDARD)}
+    for shop in idle:
+        final[shop["id"]] = "standard" if shop["id"] in on_standard else "payg"
+
+    started, cancelled, history = {}, {}, {}
+    for shop in shops:
+        if shop["status"] == "trialling":
+            continue
+        started[shop["id"]] = parse(shop["created_at"]) + timedelta(
+            minutes=paper.randint(30, 3 * 24 * 60)
+        )
+        history[shop["id"]] = [(started[shop["id"]], final[shop["id"]])]
+    for shop in closed:
+        quiet_from = max(last_activity(shop, keys, shipments), YEAR_FROM, started[shop["id"]])
+        cancelled[shop["id"]] = min(
+            moment_between(paper, quiet_from + timedelta(days=2), quiet_from + timedelta(days=28)),
+            AS_OF - timedelta(days=1),
+        )
+
+    def move(shop, before, first, last):
+        """The shop was on `before` and moved to its plan of today somewhere in the window."""
+        begun = started[shop["id"]]
+        last = min(last, cancelled.get(shop["id"], AS_OF) - timedelta(days=5))
+        first = max(first, begun + timedelta(days=20))
+        if first >= last:
+            return
+        history[shop["id"]] = [(begun, before), (moment_between(paper, first, last),
+                                                 final[shop["id"]])]
+
+    year_to = AS_OF - timedelta(days=3)
+    standard_live = [shop for shop in live if final[shop["id"]] == "standard"]
+    payg_live = [shop for shop in live if final[shop["id"]] == "payg"]
+    for shop in paper.sample(live[1:VOLUME_SHOPS], 4):
+        move(shop, "standard", YEAR_FROM, year_to)
+    picked = paper.sample(standard_live, 7)
+    for shop in picked[:5]:
+        move(shop, "payg", YEAR_FROM, year_to)
+    for shop in picked[5:7]:
+        move(shop, "volume", YEAR_FROM, year_to)
+    for shop in paper.sample(payg_live, 2) + [
+        shop for shop in closed if final[shop["id"]] == "payg"
+    ][:1]:
+        move(shop, "standard", YEAR_FROM, year_to)
+
+    # One went up to volume for the November peak, and back down when it had passed.
+    peak_from = datetime(2025, 10, 13, tzinfo=timezone.utc)
+    steady = [
+        shop for shop in standard_live
+        if shop not in picked and started[shop["id"]] < peak_from - timedelta(days=20)
+    ]
+    if steady:
+        peaked = paper.choice(steady)
+        history[peaked["id"]] = [
+            (started[peaked["id"]], "standard"),
+            (moment_between(paper, peak_from, datetime(2025, 11, 7, tzinfo=timezone.utc)),
+             "volume"),
+            (moment_between(paper, datetime(2026, 1, 26, tzinfo=timezone.utc),
+                            datetime(2026, 2, 27, tzinfo=timezone.utc)), "standard"),
+        ]
+    return started, cancelled, history
+
+
+def price_on_plans(shipments, history):
+    """The card price each parcel was booked at, less what its shop's plan took off that day."""
+    for row in shipments:
+        plan = plan_at(history.get(row["customer_id"], []), parse(row["created_at"]))
+        row["price_pence"] = parcel_price(plan, row["price_pence"])
+    return shipments
+
+
+def invoice_walk(shop_id, history, begun, ends, parcels, fails=None, stops_at=None):
+    """Every invoice from the start to the end, a month apart, each moving the next one on.
+
+    An invoice is the plan's fee and the live parcels since the last one; a month with nothing to
+    pay, which is a pay-as-you-go month without a parcel, raises none. `fails` is a failed
+    invoice the card paid a few days on: (not before, how long after). `stops_at` is the invoice
+    the card did not pay, after which there is nothing more.
+    """
+    times = [stamp_at for stamp_at, _price in parcels]
+    out = []
+    since = begun
+    due = begun + timedelta(seconds=40)
+    failed_once = False
+    while due < ends:
+        plan = plan_at(history, due)
+        low = bisect.bisect_left(times, stamp(since))
+        high = bisect.bisect_left(times, stamp(due))
+        charged = [price for _when, price in parcels[low:high]]
+        if not fee_for(plan) and not charged:
+            since, due = due, one_month_on(due)
+            continue
+        invoice = {
+            "customer_id": shop_id,
+            "due": due,
+            "data": {
+                "plan": plan,
+                "amount_pence": fee_for(plan) + sum(charged),
+                "fee_pence": fee_for(plan),
+                "parcels": len(charged),
+                "parcels_pence": sum(charged),
+            },
+            "attempts": [("invoice.paid", due)],
+        }
+        out.append(invoice)
+        paid_at = due
+        if stops_at is not None and due == stops_at:
+            invoice["attempts"] = [("invoice.payment_failed", due)]
+            break
+        if fails and not failed_once and due >= fails[0] and due + fails[1] < ends:
+            failed_once = True
+            paid_at = due + fails[1]
+            invoice["attempts"] = [("invoice.payment_failed", due), ("invoice.paid", paid_at)]
+        since = due
+        due = one_month_on(paid_at)
+    return out
+
+
+def build_billing(paper, shops, keys, shipments):
+    """Every shop's subscription, and the year of billing events that put it where it is."""
+    started, cancelled, history = choose_plans(paper, shops, keys, shipments)
+    shipments = price_on_plans(shipments, history)
+
+    parcels = {}
+    for row in shipments:
+        if row["mode"] == "live" and row["status"] != "cancelled":
+            charged = (row["created_at"], row["price_pence"])
+            parcels.setdefault(row["customer_id"], []).append(charged)
+    last_parcel = {shop_id: parse(rows[-1][0]) for shop_id, rows in parcels.items()}
+
+    def walk(shop, **extra):
+        shop_id = shop["id"]
+        return invoice_walk(
+            shop_id, history[shop_id], started[shop_id], cancelled.get(shop_id, AS_OF),
+            parcels.get(shop_id, []), **extra,
+        )
+
+    # Past due: a fee-paying live shop whose last invoice in the last two months failed.
+    live = [shop for shop in shops if shop["_live"]]
+    paying = [shop for shop in live[1:] if fee_for(plan_at(history[shop["id"]], AS_OF))]
+    sending = [shop for shop in paying if last_parcel[shop["id"]] >= AS_OF - timedelta(days=7)]
+    quiet = [shop for shop in paying if last_parcel[shop["id"]] <= AS_OF - timedelta(days=21)]
+    gone_quiet = paper.sample(quiet, min(PAST_DUE_QUIET, len(quiet)))
+    still_sending = paper.sample(sending, PAST_DUE_SENDING + PAST_DUE_QUIET - len(gone_quiet))
+    unpaid = {}
+    for shop in still_sending + gone_quiet:
+        recent = [
+            invoice["due"] for invoice in walk(shop)
+            if invoice["due"] >= AS_OF - timedelta(days=PAST_DUE_WITHIN_DAYS)
+        ]
+        unpaid[shop["id"]] = paper.choice(recent[-2:])
+
+    settled = [
+        shop for shop in live[1:] + [shop for shop in shops if shop["status"] == "closed"]
+        if shop["id"] not in unpaid
+    ]
+    recovered = {}
+    for shop in paper.sample(settled, RECOVERED_FAILURES):
+        not_before = moment_between(
+            paper, YEAR_FROM, AS_OF - timedelta(days=PAST_DUE_WITHIN_DAYS + 10)
+        )
+        recovered[shop["id"]] = (
+            not_before, timedelta(days=paper.randint(2, 6), hours=paper.randint(1, 11))
+        )
+
+    invoices = []
+    for shop in shops:
+        if shop["id"] not in started:
+            continue
+        invoices.extend(
+            walk(shop, fails=recovered.get(shop["id"]), stops_at=unpaid.get(shop["id"]))
+        )
+    invoices.sort(key=lambda invoice: (invoice["due"], invoice["customer_id"]))
+
+    events = []
+
+    def add(shop_id, kind, when, data):
+        events.append(
+            {
+                "id": make_id(paper, "bev"),
+                "customer_id": shop_id,
+                "type": kind,
+                "occurred_at": stamp(when),
+                "payload": data,
+                "received_at": stamp(when + timedelta(seconds=paper.randint(1, 40))),
+            }
+        )
+
+    tried_again = {shop["id"] for shop in gone_quiet}
+    for number, invoice in enumerate(invoices, start=1):
+        data = {"invoice": f"QP-{number:05d}", **invoice["data"]}
+        for attempt, (kind, when) in enumerate(invoice["attempts"], start=1):
+            if kind == "invoice.payment_failed":
+                add(invoice["customer_id"], kind, when,
+                    {**data, "attempt": attempt, "reason": paper.choice(FAIL_WORDING)})
+            else:
+                add(invoice["customer_id"], kind, when, data)
+        unpaid_last = invoice["attempts"][-1][0] == "invoice.payment_failed"
+        if unpaid_last and invoice["customer_id"] in tried_again:
+            # The card was tried again a few days on, and failed again.
+            again = invoice["due"] + timedelta(days=paper.randint(3, 5), hours=paper.randint(0, 9))
+            if again < AS_OF:
+                add(invoice["customer_id"], "invoice.payment_failed", again,
+                    {**data, "attempt": 2, "reason": paper.choice(FAIL_WORDING)})
+
+    for shop_id, plans in history.items():
+        add(shop_id, "subscription.started", started[shop_id], {"plan": plans[0][1]})
+        for (_was_since, was), (since, now_on) in zip(plans, plans[1:]):
+            add(shop_id, "subscription.plan_changed", since, {"from_plan": was, "plan": now_on})
+    reasons = list(CANCEL_WORDING)
+    paper.shuffle(reasons)
+    # The shops that were paying no fee choose first, so none of them goes for the fee.
+    leaving = sorted(
+        (bool(fee_for(plan_at(history[shop_id], when))), when, shop_id)
+        for shop_id, when in cancelled.items()
+    )
+    for paid_a_fee, when, shop_id in leaving:
+        reason = next(text for text in reasons if paid_a_fee or "fee" not in text)
+        reasons.remove(reason)
+        add(shop_id, "subscription.cancelled", when, {"reason": reason})
+
+    # Two failed payments that reached us after the payment that settled them.
+    by_invoice = {}
+    for row in events:
+        if row["type"].startswith("invoice."):
+            by_invoice.setdefault(row["payload"]["invoice"], []).append(row)
+    pairs = [
+        rows for rows in by_invoice.values()
+        if [row["type"] for row in rows] == ["invoice.payment_failed", "invoice.paid"]
+    ]
+    for failed, paid in paper.sample(pairs, min(LATE_ARRIVALS, len(pairs))):
+        failed["received_at"] = stamp(parse(paid["received_at"]) + timedelta(
+            minutes=paper.randint(5, 90)))
+
+    subscriptions = []
+    by_shop = {}
+    for row in events:
+        by_shop.setdefault(row["customer_id"], []).append(row)
+    for shop in shops:
+        if shop["status"] == "trialling":
+            subscription = billing.trial(shop["id"], parse(shop["created_at"]))
+        else:
+            subscription, latest = None, None
+            for row in sorted(by_shop[shop["id"]], key=lambda row: (row["received_at"], row["id"])):
+                if latest is None or row["occurred_at"] >= latest:
+                    subscription = billing.apply(
+                        subscription, shop["id"], row["type"], row["occurred_at"], row["payload"]
+                    )
+                latest = max(latest or row["occurred_at"], row["occurred_at"])
+        if billing.CUSTOMER_STATUS[subscription["status"]] != shop["status"]:
+            raise AssertionError(f"{shop['name']} is {shop['status']} on a {subscription}")
+        subscriptions.append(subscription)
+
+    kept = [row for row in events if row["occurred_at"] >= stamp(YEAR_FROM)]
+    kept.sort(key=lambda row: (row["occurred_at"], row["id"]))
+    return shipments, subscriptions, kept
+
+
 # -------------------------------------------------------------------------------------- writing
 
 
 def build():
     rng = random.Random(SEED)
+    paper = random.Random(BILLING_SEED)
     shops = build_shops(rng)
+    sign_up_recently(paper, shops)
     keys = build_keys(rng, shops)
+    date_signups(shops, keys)
     shipments, events = build_parcels(rng, shops)
     shipments, events = strand_a_few(rng, shipments, events)
     shipments = repeat_a_few_references(rng, shipments)
     endpoints, deliveries = build_webhooks(rng, shops, shipments)
+    shipments, subscriptions, billing_events = build_billing(paper, shops, keys, shipments)
     return {
         "customers": [
             {key: value for key, value in shop.items() if not key.startswith("_")}
             for shop in shops
         ],
         "api_keys": keys,
+        "subscriptions": subscriptions,
         "carriers": [dict(row) for row in CARRIERS],
         "carrier_services": service_rows(),
         "rate_cards": build_rate_cards(),
@@ -852,6 +1229,7 @@ def build():
         "tracking_events": events,
         "webhook_endpoints": endpoints,
         "webhook_deliveries": deliveries,
+        "billing_events": billing_events,
     }
 
 

@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 from app import API_VERSION, throttle
+from app.billing import CUSTOMER_STATUS
 from app.db import connect, prepare
 from app.rates import is_postcode
 from app.seed import SEED_FILE, load_seed, read_seed
@@ -37,11 +38,21 @@ def test_the_history_loads_into_an_empty_store(tmp_path):
     assert written["customers"] == len(history["customers"]) == 140
     assert written["shipments"] == len(history["shipments"])
     assert written["tracking_events"] == len(history["tracking_events"])
+    assert written["subscriptions"] == 140
+    assert written["billing_events"] == len(history["billing_events"])
 
     counted = conn.execute(
         "SELECT status, COUNT(*) AS how_many FROM shipments GROUP BY status"
     ).fetchall()
     assert dict((row["status"], row["how_many"]) for row in counted)["delivered"] > 4000
+
+    # Every shop has a subscription, and the customer status is the one its subscription gives.
+    pairs = conn.execute(
+        "SELECT c.status AS customer, s.status AS subscription FROM customers c "
+        "JOIN subscriptions s ON s.customer_id = c.id"
+    ).fetchall()
+    assert len(pairs) == 140
+    assert all(CUSTOMER_STATUS[row["subscription"]] == row["customer"] for row in pairs)
 
     # Loading twice leaves the shop that was already there alone.
     assert load_seed(conn)["customers"] == 0

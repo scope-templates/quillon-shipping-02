@@ -5,6 +5,7 @@ import sqlite3
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
+from app.billing import FIELDS as SUBSCRIPTION_FIELDS
 from app.records import pack
 from app.tracking import description_for
 
@@ -58,6 +59,11 @@ def load_seed(conn: sqlite3.Connection, path: Optional[Path] = None) -> Dict[str
             ),
         )
         put(
+            "subscriptions",
+            SUBSCRIPTION_FIELDS,
+            columns(history["subscriptions"], SUBSCRIPTION_FIELDS),
+        )
+        put(
             "carriers",
             ("code", "name", "collection_cutoff", "tracking_prefix"),
             columns(
@@ -101,6 +107,11 @@ def load_seed(conn: sqlite3.Connection, path: Optional[Path] = None) -> Dict[str
             ("id", "endpoint_id", "event_type", "shipment_id", "payload", "status", "attempts",
              "last_error", "created_at", "last_attempt_at", "next_attempt_at", "delivered_at"),
             delivery_rows(history["webhook_deliveries"]),
+        )
+        put(
+            "billing_events",
+            ("id", "customer_id", "type", "occurred_at", "payload", "received_at"),
+            billing_event_rows(history["billing_events"]),
         )
         conn.execute("COMMIT")
     except Exception:
@@ -211,6 +222,20 @@ def delivery_rows(rows: Iterable[Dict[str, Any]]) -> List[tuple]:
             row.get("last_attempt_at"),
             row.get("next_attempt_at"),
             row.get("delivered_at"),
+        )
+        for row in rows
+    ]
+
+
+def billing_event_rows(rows: Iterable[Dict[str, Any]]) -> List[tuple]:
+    return [
+        (
+            row["id"],
+            row["customer_id"],
+            row["type"],
+            row["occurred_at"],
+            pack(row["payload"]),
+            row["received_at"],
         )
         for row in rows
     ]
