@@ -51,7 +51,7 @@ and queues `tracking.updated` for anybody listening. It is not on `/v1` and no s
 starts, plan changes, paid and failed invoices and cancellations, each kept, and each moving the
 shop's subscription unless it is older than one we already hold. And `POST /signups` is the form
 on the website, which needs no key: the shop starts a thirty-day trial on `payg` with one test
-key, and nothing ends the trial but a plan starting.
+key, and the trial stays open until the billing provider starts a plan or cancels it.
 
 Every call carries a key, `qp_test_` or `qp_live_`, and only ever sees its own account and its
 own mode, except where Known issues in `CHANGELOG.md` says otherwise: a live key asking for a

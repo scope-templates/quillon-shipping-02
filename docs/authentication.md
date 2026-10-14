@@ -43,7 +43,7 @@ If a key stops working you get a problem object rather than a bare 401 body:
   "type": "https://quillonpost.co.uk/docs/errors#invalid_key",
   "title": "That API key is not one of ours",
   "status": 401,
-  "detail": "We do not recognise that key. It may have been rolled from the back office.",
+  "detail": "We do not recognise that key. It may have been rolled since it was copied.",
   "code": "invalid_key"
 }
 ```

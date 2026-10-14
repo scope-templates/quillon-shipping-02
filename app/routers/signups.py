@@ -13,7 +13,7 @@ from app.schemas import Signup, SignupRequest, problem_responses
 
 router = APIRouter(tags=["Signups"])
 
-# The label the key goes under in the back office, the same as the keys Ada sets up by hand.
+# The label the key is filed under, the same as keys set up by hand.
 KEY_LABEL = "Integration"
 
 

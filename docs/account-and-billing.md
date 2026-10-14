@@ -40,7 +40,7 @@ none of the three numbers.
 
 | Status | What it means |
 | --- | --- |
-| `trialling` | Signed up from the website, on pay as you go, with test keys. `trial_ends_at` is thirty days on from the signup; nothing stops at that date, and the trial ends when a plan starts. The date stays on the account after that, as the day the trial was due to end. |
+| `trialling` | Signed up from the website, on pay as you go, with test keys. `trial_ends_at` is thirty days on from the signup, and the trial stays open past it until the billing provider starts a plan or cancels it. The date stays on the account after that, as the day the trial was due to end. |
 | `active` | On a plan and paid up. |
 | `past_due` | The last invoice was not paid. Everything keeps working while the card is tried again; write to us if it is the card that needs changing. |
 | `cancelled` | The account is closed, and every key on it answers `401 account_closed`. |

@@ -69,7 +69,7 @@ def test_the_key_from_a_signup_works_at_once_on_its_own_allowance(client):
 
 
 def test_a_trial_past_its_end_date_still_lets_the_shop_in(client, conn):
-    """Nothing ends a trial by itself; only the billing provider moves it on."""
+    """A trial stays open until the billing provider starts a plan or cancels it."""
     made = client.post("/signups", json=FORM).json()
     customer_id = made["customer"]["id"]
     billing.save(conn, billing.trial(customer_id, now() - timedelta(days=45)))

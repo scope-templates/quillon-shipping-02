@@ -8,15 +8,14 @@ import calendar
 from datetime import datetime
 from typing import Dict
 
-# plan -> monthly fee in pence, and the percentage it takes off the card on every parcel.
 PLANS: Dict[str, Dict[str, int]] = {
     "payg": {"monthly_fee_pence": 0, "parcel_discount_percent": 0},
     "standard": {"monthly_fee_pence": 1200, "parcel_discount_percent": 5},
     "volume": {"monthly_fee_pence": 4500, "parcel_discount_percent": 12},
 }
 
-# A signup from the website starts here, and stays here until the billing provider says it has
-# started a plan. Nothing ends a trial by itself.
+# A signup from the website starts here. A trial stays open until the billing provider starts a
+# plan or cancels it.
 TRIAL_PLAN = "payg"
 TRIAL_DAYS = 30
 

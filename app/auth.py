@@ -62,7 +62,7 @@ def lookup(conn: sqlite3.Connection, key: str) -> Optional[Caller]:
 
 
 def touch(conn: sqlite3.Connection, key: str) -> None:
-    """Last used, for the page in the back office that tells Ada which keys are dead."""
+    """The day the key was last used, kept on the key."""
     conn.execute("UPDATE api_keys SET last_used_at = ? WHERE key = ?", (now_stamp(), key))
 
 
@@ -87,7 +87,7 @@ def caller(
     if found is None:
         raise QuillonError(
             "invalid_key",
-            "We do not recognise that key. It may have been rolled from the back office.",
+            "We do not recognise that key. It may have been rolled since it was copied.",
         )
     touch(conn, key)
     request.state.caller = found

@@ -13,7 +13,8 @@ Two ways to say what it should go on:
   thirty minutes from the moment we gave it to you. This is the one to use at a checkout, so
   that the shopper pays what they were shown.
 - **Off the card.** Send `carrier_code` and `service` together. We price the parcel as the card
-  stands at that moment. This is the one to use in a back office where nobody has been quoted.
+  stands at that moment. This is the one to use for an order booked by hand, where nobody has
+  been quoted.
 
 The rest of the body:
 

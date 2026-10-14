@@ -224,7 +224,7 @@ MAILBOX_DOMAINS = (
 )
 INWARD_LETTERS = "ABDEFGHJLNPQRSTUWXYZ"
 
-KEY_LABELS = ("Production", "Checkout", "Back office", "Warehouse", "Integration", "Staging")
+KEY_LABELS = ("Production", "Checkout", "Admin", "Warehouse", "Integration", "Staging")
 
 FAIL_REASONS = (
     "504 from endpoint",
