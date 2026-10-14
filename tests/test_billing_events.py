@@ -83,7 +83,7 @@ def test_a_start_puts_a_trialling_shop_on_its_plan(client, provider, conn):
     assert started.json()["id"].startswith("bev_")
 
     after = subscription(conn, NEW_SHOP)
-    assert after["monthly_fee_pence"] == 1200
+    assert after["monthly_fee_pence"] == 4900
     assert after["started_at"] == "2026-09-02T09:30:00Z"
     assert after["current_period_start"] == "2026-09-02T09:30:00Z"
     assert after["current_period_end"] == "2026-10-02T09:30:00Z"
@@ -95,8 +95,8 @@ def test_a_trialling_shop_only_starts_or_is_cancelled(client, provider, conn):
     add_trialling_shop(conn)
     for kind, extra in (
         ("subscription.plan_changed", {"plan": "volume"}),
-        ("invoice.paid", {"amount_pence": 1200}),
-        ("invoice.payment_failed", {"amount_pence": 1200}),
+        ("invoice.paid", {"amount_pence": 4900}),
+        ("invoice.payment_failed", {"amount_pence": 4900}),
     ):
         kept = client.post(
             FEED, headers=provider, json=event(kind, "2026-08-25T11:00:00Z", NEW_SHOP, **extra)
@@ -198,7 +198,7 @@ def test_a_plan_change_moves_the_plan_and_the_fee(client, provider, conn):
     assert moved.json()["plan"] == "volume"
     assert moved.json()["status"] == "active"
     after = subscription(conn, SHOP)
-    assert after["monthly_fee_pence"] == 4500
+    assert after["monthly_fee_pence"] == 19900
     assert after["current_period_end"] == "2026-09-04T10:00:00Z"
 
 
@@ -206,7 +206,7 @@ def test_a_failed_payment_and_then_a_paid_one(client, provider, conn, live):
     failed = client.post(
         FEED,
         headers=provider,
-        json=event("invoice.payment_failed", "2026-09-04T10:00:00Z", amount_pence=1200,
+        json=event("invoice.payment_failed", "2026-09-04T10:00:00Z", amount_pence=4900,
                    reason="The card was declined"),
     )
     assert failed.json()["status"] == "past_due"
@@ -218,7 +218,7 @@ def test_a_failed_payment_and_then_a_paid_one(client, provider, conn, live):
     paid = client.post(
         FEED,
         headers=provider,
-        json=event("invoice.paid", "2026-09-07T08:15:00Z", amount_pence=1200),
+        json=event("invoice.paid", "2026-09-07T08:15:00Z", amount_pence=4900),
     )
     assert paid.json()["status"] == "active"
     after = subscription(conn, SHOP)
@@ -258,7 +258,7 @@ def test_an_event_older_than_the_last_one_is_kept_and_moves_nothing(client, prov
     stale = client.post(
         FEED,
         headers=provider,
-        json=event("invoice.payment_failed", "2026-09-04T09:59:00Z", amount_pence=1200),
+        json=event("invoice.payment_failed", "2026-09-04T09:59:00Z", amount_pence=4900),
     )
     assert stale.status_code == 200
     assert stale.json()["moved"] is False
@@ -274,7 +274,7 @@ def test_an_event_older_than_the_last_one_is_kept_and_moves_nothing(client, prov
         ("invoice.payment_failed", "2026-09-04T09:59:00Z"),
         ("invoice.paid", "2026-09-04T10:00:00Z"),
     ]
-    assert json.loads(kept[0]["payload"]) == {"amount_pence": 1200}
+    assert json.loads(kept[0]["payload"]) == {"amount_pence": 4900}
 
 
 def test_what_the_feed_will_not_take(client, provider):

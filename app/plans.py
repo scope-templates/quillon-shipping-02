@@ -10,8 +10,8 @@ from typing import Dict
 
 PLANS: Dict[str, Dict[str, int]] = {
     "payg": {"monthly_fee_pence": 0, "parcel_discount_percent": 0},
-    "standard": {"monthly_fee_pence": 1200, "parcel_discount_percent": 5},
-    "volume": {"monthly_fee_pence": 4500, "parcel_discount_percent": 12},
+    "standard": {"monthly_fee_pence": 4900, "parcel_discount_percent": 5},
+    "volume": {"monthly_fee_pence": 19900, "parcel_discount_percent": 12},
 }
 
 # A signup from the website starts here. A trial stays open until the billing provider starts a

@@ -8,9 +8,10 @@ too long writing the same carrier integration twice. I look after the shops myse
 ones I am talking to in a spreadsheet of my own; Ada runs the integrations and answers support,
 and Callum writes the docs and the Python client. A hundred and forty shops are wired up to us
 and about sixty of them sent something last month; six thousand parcels went through us in the
-year to September, a third of them from one shop. With the quoting and the tracking on top of
-that it comes to a few hundred calls a day, which is small enough that the four of us can run the
-whole thing.
+year to September, a third of them from one shop. The shops that send the most are online brands
+with engineers of their own, who wired the API in themselves, and we took a small seed round in
+the spring of 2026. With the quoting and the tracking on top of that it comes to a few hundred
+calls a day, which is small enough that the four of us can run the whole thing.
 
 ## What is in it
 

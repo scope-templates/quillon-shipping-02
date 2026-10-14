@@ -46,6 +46,8 @@ the entry for the deploy that fixes it.
 - `GET /v1/account`: the plan, where the subscription stands, the current period (none on pay
   as you go) and the calendar month so far, which is the parcels, the spend and the last booking
   on the mode of the key. See `docs/account-and-billing.md`.
+- Three plans: `payg` with no monthly fee, `standard` at £49 a month and `volume` at £199 a
+  month, the two with a fee taking 5% and 12% off the card on every parcel.
 - `POST /signups`, which the form on the website posts to. The shop starts a thirty-day trial on
   pay as you go with one test key, shown once; an email address that already has an account is
   `409 email_in_use`.

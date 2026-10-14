@@ -52,8 +52,8 @@ none of the three numbers.
 | Plan | A month | Off the card on every parcel |
 | --- | --- | --- |
 | `payg` | nothing | nothing |
-| `standard` | £12 | 5% |
-| `volume` | £45 | 12% |
+| `standard` | £49 | 5% |
+| `volume` | £199 | 12% |
 
 The rate card is the list price and it is the same for every shop. The plan takes its share off
 each line when a parcel is quoted or booked, rounded to the nearest 5p as the card is, so
