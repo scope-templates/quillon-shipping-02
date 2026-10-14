@@ -154,6 +154,40 @@ def test_a_shop_that_comes_back_starts_again(client, provider, conn):
     assert client.get("/v1/carriers", headers=theirs).status_code == 200
 
 
+def test_pay_as_you_go_has_no_period(client, provider, conn):
+    paid = client.post(
+        FEED,
+        headers=provider,
+        json=event("invoice.paid", "2026-09-01T08:00:00Z", OTHER_SHOP, amount_pence=3415),
+    )
+    assert paid.json()["status"] == "active"
+    assert paid.json()["moved"] is False
+    assert subscription(conn, OTHER_SHOP)["current_period_start"] is None
+
+    up = client.post(
+        FEED,
+        headers=provider,
+        json=event("subscription.plan_changed", "2026-09-03T11:30:00Z", OTHER_SHOP,
+                   from_plan="payg", plan="standard"),
+    )
+    assert up.json()["plan"] == "standard"
+    after = subscription(conn, OTHER_SHOP)
+    assert after["current_period_start"] == "2026-09-03T11:30:00Z"
+    assert after["current_period_end"] == "2026-10-03T11:30:00Z"
+
+    down = client.post(
+        FEED,
+        headers=provider,
+        json=event("subscription.plan_changed", "2026-10-20T09:10:00Z", OTHER_SHOP,
+                   from_plan="standard", plan="payg"),
+    )
+    assert down.json()["plan"] == "payg"
+    after = subscription(conn, OTHER_SHOP)
+    assert after["monthly_fee_pence"] == 0
+    assert after["current_period_start"] is None
+    assert after["current_period_end"] is None
+
+
 def test_a_plan_change_moves_the_plan_and_the_fee(client, provider, conn):
     moved = client.post(
         FEED,

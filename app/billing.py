@@ -50,15 +50,13 @@ FIELDS = (
 
 def trial(customer_id: str, at: datetime) -> Dict[str, Any]:
     """The subscription a signup from the website starts on."""
-    ends = stamp(at + timedelta(days=TRIAL_DAYS))
     return {
         "customer_id": customer_id,
         "plan": TRIAL_PLAN,
         "status": "trialling",
         "monthly_fee_pence": fee_for(TRIAL_PLAN),
-        "current_period_start": stamp(at),
-        "current_period_end": ends,
-        "trial_ends_at": ends,
+        **period_from(TRIAL_PLAN, stamp(at)),
+        "trial_ends_at": stamp(at + timedelta(days=TRIAL_DAYS)),
         "started_at": stamp(at),
         "cancelled_at": None,
     }
@@ -94,7 +92,7 @@ def apply(
                 monthly_fee_pence=fee_for(data["plan"]),
                 cancelled_at=None,
             )
-            after.update(period_from(occurred_at))
+            after.update(period_from(data["plan"], occurred_at))
             if status == "trialling":
                 after["started_at"] = occurred_at
     elif event_type == "subscription.cancelled":
@@ -103,16 +101,21 @@ def apply(
     elif status in RUNNING:
         if event_type == "subscription.plan_changed":
             after.update(plan=data["plan"], monthly_fee_pence=fee_for(data["plan"]))
+            if not fee_for(data["plan"]) or after["current_period_start"] is None:
+                after.update(period_from(data["plan"], occurred_at))
         elif event_type == "invoice.paid":
             after["status"] = "active"
-            after.update(period_from(occurred_at))
+            if fee_for(after["plan"]):
+                after.update(period_from(after["plan"], occurred_at))
         elif event_type == "invoice.payment_failed":
             after["status"] = "past_due"
     return after
 
 
-def period_from(occurred_at: str) -> Dict[str, str]:
-    """A period runs a calendar month from the start, or from the invoice that paid for it."""
+def period_from(plan: str, occurred_at: str) -> Dict[str, Optional[str]]:
+    """A month from the start, or from the invoice that paid for it. Pay as you go has none."""
+    if not fee_for(plan):
+        return {"current_period_start": None, "current_period_end": None}
     return {
         "current_period_start": occurred_at,
         "current_period_end": stamp(one_month_on(read_stamp(occurred_at))),

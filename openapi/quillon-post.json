@@ -3778,11 +3778,26 @@
             "title": "Status"
           },
           "current_period_start": {
-            "type": "string",
-            "title": "Current Period Start"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Period Start",
+            "description": "A month at a time on a plan with a fee; null on pay as you go."
           },
           "current_period_end": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Current Period End"
           },
           "trial_ends_at": {
@@ -3808,8 +3823,6 @@
           "mode",
           "plan",
           "status",
-          "current_period_start",
-          "current_period_end",
           "this_month"
         ],
         "title": "Account",
@@ -4931,11 +4944,26 @@
             "title": "Monthly Fee Pence"
           },
           "current_period_start": {
-            "type": "string",
-            "title": "Current Period Start"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Period Start",
+            "description": "A month at a time on a plan with a fee; null on pay as you go."
           },
           "current_period_end": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Current Period End"
           },
           "trial_ends_at": {
@@ -4970,8 +4998,6 @@
           "plan",
           "status",
           "monthly_fee_pence",
-          "current_period_start",
-          "current_period_end",
           "started_at"
         ],
         "title": "Subscription"

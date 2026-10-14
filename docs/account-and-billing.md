@@ -59,6 +59,10 @@ each line when a parcel is quoted or booked, rounded to the nearest 5p as the ca
 and the live parcels booked since the last invoice. To move plan, write to
 support@quillonpost.co.uk.
 
+Pay as you go has no period: `current_period_start` and `current_period_end` are null on it, and
+its invoice, which is the parcels alone, changes nothing but the status. A plan with a fee runs a
+month at a time from the start, or from the invoice that paid for the month.
+
 ## Signing up
 
 The form on the website posts to `POST /signups`, which needs no key.
@@ -89,8 +93,8 @@ curl https://api.quillonpost.co.uk/signups \
     "plan": "payg",
     "status": "trialling",
     "monthly_fee_pence": 0,
-    "current_period_start": "2026-08-12T14:02:11Z",
-    "current_period_end": "2026-09-11T14:02:11Z",
+    "current_period_start": null,
+    "current_period_end": null,
     "trial_ends_at": "2026-09-11T14:02:11Z",
     "started_at": "2026-08-12T14:02:11Z",
     "cancelled_at": null
@@ -139,13 +143,13 @@ What an event does depends on where the subscription stands when it arrives:
 
 | Subscription is | Event | What it does |
 | --- | --- | --- |
-| `trialling` | `subscription.started` | Puts the shop on the plan in `data.plan`, `active`, with a period of a month from `occurred_at`. That moment is `started_at`, and it is kept for good. |
+| `trialling` | `subscription.started` | Puts the shop on the plan in `data.plan`, `active`, and on a plan with a fee a period of a month from `occurred_at`. That moment is `started_at`, and it is kept for good. |
 | `trialling` | `subscription.cancelled` | `cancelled`, and the account is closed. |
-| `active` or `past_due` | `subscription.plan_changed` | Moves the shop to the plan in `data.plan` and its fee. The period stays as it was. |
-| `active` or `past_due` | `invoice.paid` | `active`, and a new period of a month from `occurred_at`. |
+| `active` or `past_due` | `subscription.plan_changed` | Moves the shop to the plan in `data.plan` and its fee. Between two plans with a fee the period stays as it was; moving to pay as you go ends it, and moving off it starts one from `occurred_at`. |
+| `active` or `past_due` | `invoice.paid` | `active`, and on a plan with a fee a new period of a month from `occurred_at`. |
 | `active` or `past_due` | `invoice.payment_failed` | `past_due`. The shop's keys go on working. |
 | `active` or `past_due` | `subscription.cancelled` | `cancelled`, and the account is closed: every key on it answers `account_closed`. |
-| `cancelled` | `subscription.started` | The shop has come back: `active` again on the plan in `data.plan`, with a new period, and its keys work again. |
+| `cancelled` | `subscription.started` | The shop has come back: `active` again on the plan in `data.plan`, with a new period on a plan with a fee, and its keys work again. |
 
 Anything else is kept and moves nothing: a trialling shop is not invoiced, a running
 subscription does not start a second time, and a cancelled one waits for a start.

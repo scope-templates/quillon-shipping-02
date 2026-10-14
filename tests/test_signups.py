@@ -29,8 +29,9 @@ def test_a_signup_gets_a_trial_and_one_test_key_shown_once(client, conn):
     assert trial["plan"] == "payg"
     assert trial["status"] == "trialling"
     assert trial["monthly_fee_pence"] == 0
-    assert trial["trial_ends_at"] == trial["current_period_end"]
-    lasts = read_stamp(trial["trial_ends_at"]) - read_stamp(trial["current_period_start"])
+    assert trial["current_period_start"] is None
+    assert trial["current_period_end"] is None
+    lasts = read_stamp(trial["trial_ends_at"]) - read_stamp(customer["created_at"])
     assert lasts == timedelta(days=TRIAL_DAYS) == timedelta(days=30)
 
     assert body["key"].startswith("qp_test_")

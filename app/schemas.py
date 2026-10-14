@@ -287,8 +287,10 @@ class Account(BaseModel):
     mode: Mode
     plan: Literal[tuple(PLANS)]  # type: ignore[valid-type]
     status: Literal[SUBSCRIPTION_STATUSES]  # type: ignore[valid-type]
-    current_period_start: str
-    current_period_end: str
+    current_period_start: Optional[str] = Field(
+        default=None, description="A month at a time on a plan with a fee; null on pay as you go."
+    )
+    current_period_end: Optional[str] = None
     trial_ends_at: Optional[str] = None
     this_month: AccountMonth
 
@@ -331,8 +333,10 @@ class Subscription(BaseModel):
     plan: Literal[tuple(PLANS)]  # type: ignore[valid-type]
     status: Literal[SUBSCRIPTION_STATUSES]  # type: ignore[valid-type]
     monthly_fee_pence: int
-    current_period_start: str
-    current_period_end: str
+    current_period_start: Optional[str] = Field(
+        default=None, description="A month at a time on a plan with a fee; null on pay as you go."
+    )
+    current_period_end: Optional[str] = None
     trial_ends_at: Optional[str] = None
     started_at: str
     cancelled_at: Optional[str] = None
