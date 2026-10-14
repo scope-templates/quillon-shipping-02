@@ -116,7 +116,9 @@ six weeks are still trialling, eight are past due and the six closed accounts ar
 
 It is built by `python scripts/build_seed.py`, which runs off fixed seeds and writes the same
 bytes every time; `--check` tells you whether the file still matches the script. The service
-loads it the first time it opens an empty database.
+loads it the first time it opens an empty database, dated so that it ends the day before that
+first start (two days before, on a start before six in the morning UTC, so that nothing in it
+happened after the store was opened).
 
 ## Docs and clients
 

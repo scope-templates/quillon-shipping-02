@@ -2,13 +2,15 @@
 
 import json
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 from app import API_VERSION, throttle
 from app.billing import CUSTOMER_STATUS
 from app.db import connect, prepare
 from app.rates import is_postcode
-from app.seed import SEED_FILE, load_seed, read_seed
+from app.ids import read_stamp
+from app.seed import A_TIME, SEED_FILE, dated_from, days_forward, load_seed, read_seed
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -57,6 +59,48 @@ def test_the_history_loads_into_an_empty_store(tmp_path):
     # Loading twice leaves the shop that was already there alone.
     assert load_seed(conn)["customers"] == 0
     conn.close()
+
+
+def test_the_history_ends_the_day_before_the_store_was_opened(tmp_path):
+    committed = read_seed()
+    oldest = min(row["created_at"] for row in committed["shipments"])
+    newest = max(row["created_at"] for row in committed["shipments"])
+
+    opened = datetime(2027, 3, 18, 9, 40, tzinfo=timezone.utc)
+    conn = prepare(connect(tmp_path / "opened.sqlite"))
+    load_seed(conn, opened=opened)
+    first, last = conn.execute(
+        "SELECT MIN(created_at), MAX(created_at) FROM shipments"
+    ).fetchone()
+    conn.close()
+    assert last[:10] == "2027-03-17"
+    assert read_stamp(last) - read_stamp(first) == read_stamp(newest) - read_stamp(oldest)
+
+    # Opened before six in the morning, the history ends a day earlier, so that nothing in it
+    # happened after the store was opened.
+    early = datetime(2027, 3, 18, 3, 0, tzinfo=timezone.utc)
+    assert days_forward(early) == days_forward(opened) - 1
+
+
+def test_every_time_in_the_history_moves_by_the_same_days():
+    committed = read_seed()
+    days = days_forward(datetime(2027, 3, 18, 9, 40, tzinfo=timezone.utc))
+    shifted = dated_from(committed, days)
+
+    def times(value, out):
+        if isinstance(value, dict):
+            for inner in value.values():
+                times(inner, out)
+        elif isinstance(value, list):
+            for inner in value:
+                times(inner, out)
+        elif isinstance(value, str) and A_TIME.match(value):
+            out.append(value)
+        return out
+
+    before, after = times(committed, []), times(shifted, [])
+    assert len(before) == len(after) > 30000
+    assert {(read_stamp(b) - read_stamp(a)).days for a, b in zip(before, after)} == {days}
 
 
 def test_every_address_in_the_history_has_a_postcode_we_would_quote_on():

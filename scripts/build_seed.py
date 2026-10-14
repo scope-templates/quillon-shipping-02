@@ -30,14 +30,16 @@ from app.rates import (  # noqa: E402
 from app import billing  # noqa: E402
 from app.ids import ALPHABET as ID_ALPHABET, read_stamp  # noqa: E402
 from app.plans import TRIAL_PLAN, fee_for, one_month_on, parcel_price  # noqa: E402
+from app.seed import SNAPSHOT  # noqa: E402
 from app.tracking import status_after  # noqa: E402
 
 SEED = 20260901
 BILLING_SEED = 20260714
 OUT = Path(__file__).resolve().parent.parent / "data" / "seed.json"
 
-# Snapshot: 06:00 UTC on 1 September 2026. Nothing in the file is later than this.
-AS_OF = datetime(2026, 9, 1, 6, 0, tzinfo=timezone.utc)
+# Snapshot: 06:00 UTC on 1 September 2026, which app.seed moves up to the day a store is opened.
+# Nothing in the file happened after it.
+AS_OF = SNAPSHOT
 FIRST_DAY = date(2025, 9, 1)
 LAST_DAY = date(2026, 8, 31)
 OPENED_FOR_BUSINESS = date(2024, 4, 15)

@@ -1,15 +1,43 @@
 """Loading data/seed.json into an empty store, which is what a fresh checkout gets."""
 
 import json
+import re
 import sqlite3
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
 from app.billing import FIELDS as SUBSCRIPTION_FIELDS
+from app.ids import now, read_stamp, stamp
 from app.records import pack
 from app.tracking import description_for
 
 SEED_FILE = Path(__file__).resolve().parent.parent / "data" / "seed.json"
+
+# The file is a snapshot taken at six in the morning UTC on the day after its last day. A store
+# gets it moved forward by whole days, to the latest of those mornings that is not after the
+# moment the store is first opened, so the history ends the day before.
+SNAPSHOT = datetime(2026, 9, 1, 6, 0, tzinfo=timezone.utc)
+
+# Every column that holds a time, and the packed columns with times inside them.
+DATED = {
+    "customers": ("created_at",),
+    "api_keys": ("created_at", "last_used_at"),
+    "subscriptions": (
+        "current_period_start",
+        "current_period_end",
+        "trial_ends_at",
+        "started_at",
+        "cancelled_at",
+    ),
+    "shipments": ("created_at", "collected_at", "delivered_at", "cancelled_at"),
+    "tracking_events": ("occurred_at",),
+    "webhook_endpoints": ("created_at", "disabled_at"),
+    "webhook_deliveries": ("created_at", "last_attempt_at", "next_attempt_at", "delivered_at"),
+    "billing_events": ("occurred_at", "received_at"),
+}
+PACKED = {"webhook_deliveries": "payload", "billing_events": "payload"}
+A_TIME = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
 
 # Two things the file does not repeat on every parcel: the words in front of a tracking code,
 # which come from app.tracking, and the sender, which is the shop's dispatch address unless the
@@ -38,9 +66,48 @@ def insert(conn: sqlite3.Connection, table: str, fields: Iterable[str], rows: Li
     return len(rows)
 
 
-def load_seed(conn: sqlite3.Connection, path: Optional[Path] = None) -> Dict[str, int]:
-    """Load the history. Does nothing to a table that already has rows in it."""
+def days_forward(opened: datetime) -> int:
+    """Whole days from the snapshot to the latest morning of it that is not after `opened`."""
+    return (opened - SNAPSHOT).days
+
+
+def moved(value: Any, days: int) -> Any:
+    """A time moved forward by whole days, and the times inside a payload with it."""
+    if isinstance(value, str) and A_TIME.match(value):
+        return stamp(read_stamp(value) + timedelta(days=days))
+    if isinstance(value, dict):
+        return {key: moved(inner, days) for key, inner in value.items()}
+    if isinstance(value, list):
+        return [moved(inner, days) for inner in value]
+    return value
+
+
+def dated_from(history: Dict[str, Any], days: int) -> Dict[str, Any]:
+    """The history with every column in DATED, and every time in a PACKED one, moved forward."""
+    out = dict(history)
+    for table, fields in DATED.items():
+        rows = []
+        for row in history[table]:
+            row = dict(row)
+            for field in fields:
+                if field in row:
+                    row[field] = moved(row[field], days)
+            if table in PACKED:
+                row[PACKED[table]] = moved(row[PACKED[table]], days)
+            rows.append(row)
+        out[table] = rows
+    return out
+
+
+def load_seed(
+    conn: sqlite3.Connection, path: Optional[Path] = None, opened: Optional[datetime] = None
+) -> Dict[str, int]:
+    """Load the history, dated to end the day before `opened`, which is now unless it is given.
+
+    Does nothing to a table that already has rows in it.
+    """
     history = read_seed(path)
+    history = dated_from(history, days_forward(opened or now()))
     written: Dict[str, int] = {}
 
     def put(table: str, fields: Iterable[str], rows: List[tuple]) -> None:
