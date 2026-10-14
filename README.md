@@ -38,10 +38,10 @@ of us can run the whole thing.
 - **Carriers.** `GET /v1/carriers` is the four carriers and their services, so nobody has to
   hard-code them.
 - **Account.** `GET /v1/account` is the account behind the key and nothing else: its plan, where
-  its subscription stands, the period it is in, and the calendar month so far, which is the
-  parcels, the spend and the last booking on the key's own mode. The plan is `payg`, `standard`
-  or `volume`, and the two with a monthly fee take their share off every price on the card when
-  a parcel is quoted or booked.
+  its subscription stands, the period it is in (none on pay as you go), and the calendar month
+  so far, which is the parcels, the spend and the last booking on the key's own mode. The plan
+  is `payg`, `standard` or `volume`, and the two with a monthly fee take their share off every
+  price on the card when a parcel is quoted or booked.
 
 The carriers come in the other way. `POST /carriers/{code}/scans` is the feed they post to, one
 scan at a time, on a shared secret out of the environment (`CARRIER_SECRET_NORTHGATE` and the

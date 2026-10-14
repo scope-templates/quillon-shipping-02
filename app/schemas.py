@@ -353,7 +353,9 @@ class BillingEventData(BaseModel):
     """What the provider sends with an event. Everything in it is kept as it came."""
 
     plan: Optional[Literal[tuple(PLANS)]] = Field(  # type: ignore[valid-type]
-        default=None, description="The plan the shop is on now, on a start and on a plan change."
+        default=None,
+        description="The plan the shop is on now. A start and a plan change need it; on any "
+        "event it must be payg, standard or volume when it is there.",
     )
 
     model_config = ConfigDict(extra="allow")

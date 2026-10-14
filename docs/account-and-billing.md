@@ -162,7 +162,8 @@ Every event is kept as it came, with whatever is in `data`, and has an id of our
 it in UTC. The events from before the feed went live on 14 July 2026 were loaded in that morning
 in the order they happened.
 
-An unknown customer id is `404 not_found`, an event type not in the table is
-`422 validation_failed`, and a start or a plan change without a plan we sell is the same. The
+An unknown customer id is `404 not_found`, and an event type not in the table is
+`422 validation_failed`. So is a start or a plan change without `data.plan`, and any event whose
+`data.plan`, when it is there, is not `payg`, `standard` or `volume`. The
 secret is `BILLING_SECRET` at our end, and without one set the feed is closed and answers
 `401 invalid_billing_secret`.

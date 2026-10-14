@@ -43,9 +43,9 @@ the entry for the deploy that fixes it.
 
 ## 2026-07-14
 
-- `GET /v1/account`: the plan, where the subscription stands, the current period and the
-  calendar month so far, which is the parcels, the spend and the last booking on the mode of the
-  key. See `docs/account-and-billing.md`.
+- `GET /v1/account`: the plan, where the subscription stands, the current period (none on pay
+  as you go) and the calendar month so far, which is the parcels, the spend and the last booking
+  on the mode of the key. See `docs/account-and-billing.md`.
 - `POST /signups`, which the form on the website posts to. The shop starts a thirty-day trial on
   pay as you go with one test key, shown once; an email address that already has an account is
   `409 email_in_use`.
@@ -53,7 +53,8 @@ the entry for the deploy that fixes it.
   work like any other's.
 - `POST /billing/events`, where the billing provider tells us about starts, plan changes,
   invoices and cancellations. Off `/v1`, on a secret of its own, and closed until `BILLING_SECRET`
-  is set. The provider's events back to September 2025 were loaded in on the day.
+  is set. The provider's events for the year to date, and the start of every subscription that
+  began before it, were loaded in on the day.
 
 ## 2026-06-09
 
