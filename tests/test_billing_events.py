@@ -197,6 +197,22 @@ def test_what_the_feed_will_not_take(client, provider):
     assert no_plan.status_code == 422
     assert "data.plan" in no_plan.json()["detail"]
 
+    not_a_plan = client.post(
+        FEED,
+        headers=provider,
+        json=event("subscription.plan_changed", "2026-09-04T10:00:00Z", plan=["volume"]),
+    )
+    assert not_a_plan.status_code == 422
+    assert not_a_plan.json()["code"] == "validation_failed"
+    assert "data.plan" in not_a_plan.json()["detail"]
+
+    nested = client.post(
+        FEED,
+        headers=provider,
+        json=event("subscription.started", "2026-09-04T10:00:00Z", plan={"name": "volume"}),
+    )
+    assert nested.status_code == 422
+
     no_zone = client.post(
         FEED, headers=provider, json=event("invoice.paid", "2026-09-04T10:00:00")
     )

@@ -344,17 +344,26 @@ class Signup(BaseModel):
     key: str = Field(description="A qp_test_ key, shown once, here. Keep it.")
 
 
+class BillingEventData(BaseModel):
+    """What the provider sends with an event. Everything in it is kept as it came."""
+
+    plan: Optional[Literal[tuple(PLANS)]] = Field(  # type: ignore[valid-type]
+        default=None, description="The plan the shop is on now, on a start and on a plan change."
+    )
+
+    model_config = ConfigDict(extra="allow")
+
+    def as_sent(self) -> Dict[str, Any]:
+        return self.model_dump(exclude_unset=True)
+
+
 class BillingEvent(BaseModel):
     """One event as the billing provider posts it to us."""
 
     type: Literal[BILLING_EVENT_TYPES]  # type: ignore[valid-type]
     customer_id: str = Field(min_length=4, max_length=40, description="Our id for the shop.")
     occurred_at: str = Field(description="When it happened at the provider, UTC, ISO 8601.")
-    data: Dict[str, Any] = Field(
-        default_factory=dict,
-        description="What the provider sends with it. The plan is in data.plan on a start and "
-        "on a plan change; the rest is kept as it came.",
-    )
+    data: BillingEventData = Field(default_factory=BillingEventData)
 
     model_config = ConfigDict(
         json_schema_extra={

@@ -3971,10 +3971,7 @@
             "description": "When it happened at the provider, UTC, ISO 8601."
           },
           "data": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Data",
-            "description": "What the provider sends with it. The plan is in data.plan on a start and on a plan change; the rest is kept as it came."
+            "$ref": "#/components/schemas/BillingEventData"
           }
         },
         "type": "object",
@@ -3994,6 +3991,31 @@
           "occurred_at": "2026-08-12T10:04:31Z",
           "type": "subscription.plan_changed"
         }
+      },
+      "BillingEventData": {
+        "properties": {
+          "plan": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "payg",
+                  "standard",
+                  "volume"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan",
+            "description": "The plan the shop is on now, on a start and on a plan change."
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "title": "BillingEventData",
+        "description": "What the provider sends with an event. Everything in it is kept as it came."
       },
       "BillingReceipt": {
         "properties": {

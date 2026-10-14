@@ -47,7 +47,7 @@ def occurred_in_utc(event: BillingEvent) -> str:
 
 
 def check_plan(event: BillingEvent) -> None:
-    if event.type in billing.NAMES_A_PLAN and event.data.get("plan") not in PLANS:
+    if event.type in billing.NAMES_A_PLAN and event.data.plan is None:
         raise QuillonError(
             "validation_failed",
             f"data.plan: {event.type} needs the plan, one of {', '.join(PLANS)}.",
@@ -76,6 +76,7 @@ def record_billing_event(
     check_secret(billing_secret)
     occurred_at = occurred_in_utc(event)
     check_plan(event)
+    data = event.data.as_sent()
 
     customer = conn.execute(
         "SELECT id FROM customers WHERE id = ?", (event.customer_id,)
@@ -91,7 +92,7 @@ def record_billing_event(
     conn.execute(
         "INSERT INTO billing_events (id, customer_id, type, occurred_at, payload, received_at) "
         "VALUES (?, ?, ?, ?, ?, ?)",
-        (event_id, event.customer_id, event.type, occurred_at, pack(event.data), now_stamp()),
+        (event_id, event.customer_id, event.type, occurred_at, pack(data), now_stamp()),
     )
 
     row = conn.execute(
@@ -100,7 +101,7 @@ def record_billing_event(
     before = dict(row) if row is not None else None
     after = before
     if latest is None or occurred_at >= latest:
-        after = billing.apply(before, event.customer_id, event.type, occurred_at, event.data)
+        after = billing.apply(before, event.customer_id, event.type, occurred_at, data)
     moved = after is not None and after != before
     if moved:
         billing.save(conn, after)
