@@ -109,3 +109,25 @@ def test_a_form_that_will_not_do_is_refused(client):
 
     no_name = client.post("/signups", json={**FORM, "shop_name": ""})
     assert no_name.status_code == 422
+
+    blank_name = client.post("/signups", json={**FORM, "shop_name": "   "})
+    assert blank_name.status_code == 422
+    assert "shop_name" in blank_name.json()["detail"]
+
+    blank_platform = client.post("/signups", json={**FORM, "platform": " 	 "})
+    assert blank_platform.status_code == 422
+    assert "platform" in blank_platform.json()["detail"]
+
+
+def test_an_address_is_the_same_address_whatever_its_letters(client):
+    first = client.post(
+        "/signups", json={**FORM, "contact_email": "straße@saltmarshwoollens.co.uk"}
+    )
+    assert first.status_code == 201
+    assert first.json()["customer"]["contact_email"] == "straße@saltmarshwoollens.co.uk"
+
+    again = client.post(
+        "/signups", json={**FORM, "contact_email": "STRASSE@saltmarshwoollens.co.uk"}
+    )
+    assert again.status_code == 409
+    assert again.json()["code"] == "email_in_use"

@@ -308,6 +308,7 @@ class SignupRequest(BaseModel):
     city: str = Field(min_length=1, max_length=80)
 
     model_config = ConfigDict(
+        str_strip_whitespace=True,
         json_schema_extra={
             "example": {
                 "shop_name": "Saltmarsh Woollens",

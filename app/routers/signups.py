@@ -17,6 +17,14 @@ router = APIRouter(tags=["Signups"])
 KEY_LABEL = "Integration"
 
 
+def email_in_use(conn: sqlite3.Connection, folded: str) -> bool:
+    """Compared casefolded in Python, because sqlite's lower() stops at the ASCII letters."""
+    return any(
+        row[0].casefold() == folded
+        for row in conn.execute("SELECT contact_email FROM customers")
+    )
+
+
 @router.post(
     "/signups",
     response_model=Signup,
@@ -35,22 +43,12 @@ def create_signup(
     Live keys are set up by hand when the shop signs.
     """
     email = str(body.contact_email).lower()
-    taken = conn.execute(
-        "SELECT 1 FROM customers WHERE lower(contact_email) = ?", (email,)
-    ).fetchone()
-    if taken is not None:
-        raise QuillonError(
-            "email_in_use",
-            f"There is already an account for {email}. Write to support@quillonpost.co.uk "
-            "and we will find it for you.",
-        )
-
     at = now()
     customer = {
         "id": new_id("customer"),
-        "name": body.shop_name.strip(),
-        "platform": body.platform.strip(),
-        "city": body.city.strip(),
+        "name": body.shop_name,
+        "platform": body.platform,
+        "city": body.city,
         "contact_email": email,
         "status": "trialling",
         "created_at": stamp(at),
@@ -58,8 +56,14 @@ def create_signup(
     subscription = billing.trial(customer["id"], at)
     key = api_key("test")
 
-    conn.execute("BEGIN")
+    conn.execute("BEGIN IMMEDIATE")
     try:
+        if email_in_use(conn, email.casefold()):
+            raise QuillonError(
+                "email_in_use",
+                f"There is already an account for {email}. Write to support@quillonpost.co.uk "
+                "and we will find it for you.",
+            )
         conn.execute(
             f"INSERT INTO customers ({', '.join(customer)}) "
             f"VALUES ({', '.join('?' for _ in customer)})",
