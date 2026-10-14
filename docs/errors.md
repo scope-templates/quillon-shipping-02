@@ -35,10 +35,16 @@ Write to support@quillonpost.co.uk if that is a surprise.
 **401.** On the carrier scan feed only: the secret on the request is not the one we issued for
 that carrier. Shops never see this.
 
+## `invalid_billing_secret`
+
+**401.** On the billing feed only: the `Billing-Secret` on the request is not the one we set up
+with the billing provider, or there is none set at our end. Shops never see this.
+
 ## `not_found`
 
 **404.** No shipment, endpoint or label link of that name on this account. A parcel booked on a
-test key is not there for a live key, and another account's parcel is not there at all.
+test key is not there for a live key, and another account's parcel is not there at all. On the
+billing feed, no shop with that customer id.
 
 ## `method_not_allowed`
 
@@ -82,6 +88,11 @@ was used on and when. Use a fresh key for a different request.
 
 **409.** That `reference` is already on one of your shipments; the `detail` names it. References
 are unique per account and per mode, so a test parcel and a live parcel can share one.
+
+## `email_in_use`
+
+**409.** On `POST /signups`: there is already an account with that contact email, in whatever
+capitals. Write to support@quillonpost.co.uk and we will find it for you.
 
 ## `not_cancellable`
 

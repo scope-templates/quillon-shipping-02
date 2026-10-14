@@ -1,14 +1,16 @@
 # Authentication
 
-Every call except `GET /health`, the label links and the carrier scan feed, which uses a
-carrier secret of its own, needs a key:
+Every call except `GET /health`, the label links, `POST /signups` and the two feeds that come
+in from outside, the carriers' scans and the billing provider's events, which each use a secret
+of their own, needs a key:
 
 ```
 Authorization: Bearer qp_live_8zkdbmhybs5zpfwzwz5kzqvt
 ```
 
-Keys are issued per account, not per person. Ada sets them up when you sign; write to
-support@quillonpost.co.uk if you want another one.
+Keys are issued per account, not per person. A signup on the website comes with one test key;
+Ada sets up the live ones when you sign, and you can write to support@quillonpost.co.uk if you
+want another.
 
 ## Test and live
 

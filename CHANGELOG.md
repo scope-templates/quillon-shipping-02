@@ -41,6 +41,20 @@ the entry for the deploy that fixes it.
 - Volumetric weight on the quote: `chargeable_weight_grams` in the answer, so a big light box
   is priced the way it will be invoiced.
 
+## 2026-07-14
+
+- `GET /v1/account`: the plan, where the subscription stands, the current period and the
+  calendar month so far, which is the parcels, the spend and the last booking on the mode of the
+  key. See `docs/account-and-billing.md`.
+- `POST /signups`, which the form on the website posts to. The shop starts a thirty-day trial on
+  pay as you go with one test key, shown once; an email address that already has an account is
+  `409 email_in_use`.
+- An account can be `trialling` as well as `active` and `closed`, and a trialling account's keys
+  work like any other's.
+- `POST /billing/events`, where the billing provider tells us about starts, plan changes,
+  invoices and cancellations. Off `/v1`, on a secret of its own, and closed until `BILLING_SECRET`
+  is set. The provider's events back to September 2025 were loaded in on the day.
+
 ## 2026-06-09
 
 - `reference` is unique inside an account and mode, and a repeat is `409 reference_in_use`
