@@ -209,8 +209,20 @@ def connect(where: Optional[Path] = None) -> sqlite3.Connection:
     return conn
 
 
+# A store from before subscriptions were kept: every shop in it goes on pay as you go, running
+# since it joined, or cancelled if it is closed, until the billing provider says otherwise.
+FIRST_SUBSCRIPTIONS = """
+INSERT INTO subscriptions (customer_id, plan, status, monthly_fee_pence, current_period_start,
+                           current_period_end, trial_ends_at, started_at, cancelled_at)
+SELECT id, 'payg', CASE status WHEN 'closed' THEN 'cancelled' ELSE 'active' END, 0, NULL, NULL,
+       NULL, created_at, NULL
+FROM customers WHERE NOT EXISTS (SELECT 1 FROM subscriptions)
+"""
+
+
 def prepare(conn: sqlite3.Connection) -> sqlite3.Connection:
     conn.executescript(SCHEMA)
+    conn.execute(FIRST_SUBSCRIPTIONS)
     return conn
 
 

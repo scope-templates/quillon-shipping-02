@@ -63,24 +63,14 @@ def trial(customer_id: str, at: datetime) -> Dict[str, Any]:
 
 
 def apply(
-    subscription: Optional[Dict[str, Any]],
-    customer_id: str,
-    event_type: str,
-    occurred_at: str,
-    data: Dict[str, Any],
-) -> Optional[Dict[str, Any]]:
+    subscription: Dict[str, Any], event_type: str, occurred_at: str, data: Dict[str, Any]
+) -> Dict[str, Any]:
     """The subscription after one event, the same as before when the event does not move it.
 
     A trialling subscription starts or is cancelled. A running one changes plan, is invoiced or is
     cancelled, and does not start a second time: `started_at` is the first start, kept for good.
-    A cancelled one starts again when the shop comes back. Every event but a start needs a
-    subscription already there; without one the answer is None.
+    A cancelled one starts again when the shop comes back.
     """
-    if subscription is None:
-        if event_type != "subscription.started":
-            return None
-        subscription = {field: None for field in FIELDS}
-        subscription.update(customer_id=customer_id, status="trialling")
     after = dict(subscription)
     status = after["status"]
 

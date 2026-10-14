@@ -3112,66 +3112,6 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
-          },
-          "404": {
-            "description": "No such thing here",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                },
-                "examples": {
-                  "not_found": {
-                    "summary": "No such thing here",
-                    "value": {
-                      "type": "https://quillonpost.co.uk/docs/errors#not_found",
-                      "title": "No such thing here",
-                      "status": 404,
-                      "detail": "No such thing here",
-                      "code": "not_found"
-                    }
-                  }
-                }
-              }
-            },
-            "headers": {
-              "Quillon-Version": {
-                "description": "The dated version this deployment speaks.",
-                "schema": {
-                  "type": "string",
-                  "examples": [
-                    "2026-08-01"
-                  ]
-                }
-              },
-              "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
-                "schema": {
-                  "type": "integer",
-                  "examples": [
-                    600
-                  ]
-                }
-              },
-              "X-RateLimit-Remaining": {
-                "description": "What is left of the limit in this minute.",
-                "schema": {
-                  "type": "integer",
-                  "examples": [
-                    573
-                  ]
-                }
-              },
-              "X-RateLimit-Reset": {
-                "description": "Unix seconds at which the minute turns over.",
-                "schema": {
-                  "type": "integer",
-                  "examples": [
-                    1788080460
-                  ]
-                }
-              }
-            }
           }
         },
         "security": [
@@ -4042,35 +3982,21 @@
             "title": "Customer Id"
           },
           "plan": {
-            "anyOf": [
-              {
-                "type": "string",
-                "enum": [
-                  "payg",
-                  "standard",
-                  "volume"
-                ]
-              },
-              {
-                "type": "null"
-              }
+            "type": "string",
+            "enum": [
+              "payg",
+              "standard",
+              "volume"
             ],
             "title": "Plan"
           },
           "status": {
-            "anyOf": [
-              {
-                "type": "string",
-                "enum": [
-                  "trialling",
-                  "active",
-                  "past_due",
-                  "cancelled"
-                ]
-              },
-              {
-                "type": "null"
-              }
+            "type": "string",
+            "enum": [
+              "trialling",
+              "active",
+              "past_due",
+              "cancelled"
             ],
             "title": "Status"
           },
@@ -4084,6 +4010,8 @@
         "required": [
           "id",
           "customer_id",
+          "plan",
+          "status",
           "moved"
         ],
         "title": "BillingReceipt"

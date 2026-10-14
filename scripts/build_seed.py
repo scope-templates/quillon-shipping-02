@@ -1181,14 +1181,15 @@ def build_billing(paper, shops, keys, shipments):
     for row in events:
         by_shop.setdefault(row["customer_id"], []).append(row)
     for shop in shops:
-        if shop["status"] == "trialling":
-            subscription = billing.trial(shop["id"], parse(shop["created_at"]))
-        else:
-            subscription, latest = None, None
+        subscription = billing.trial(shop["id"], parse(shop["created_at"]))
+        if shop["status"] != "trialling":
+            # The shops Ada signed by hand had no trial to end.
+            subscription["trial_ends_at"] = None
+            latest = None
             for row in sorted(by_shop[shop["id"]], key=lambda row: (row["received_at"], row["id"])):
                 if latest is None or row["occurred_at"] >= latest:
                     subscription = billing.apply(
-                        subscription, shop["id"], row["type"], row["occurred_at"], row["payload"]
+                        subscription, row["type"], row["occurred_at"], row["payload"]
                     )
                 latest = max(latest or row["occurred_at"], row["occurred_at"])
         if billing.CUSTOMER_STATUS[subscription["status"]] != shop["status"]:

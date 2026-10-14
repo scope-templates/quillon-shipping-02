@@ -7,7 +7,6 @@ from fastapi import APIRouter, Depends
 
 from app.auth import Caller, caller
 from app.db import get_conn
-from app.errors import QuillonError
 from app.ids import now, stamp
 from app.schemas import Account, problem_responses
 
@@ -19,7 +18,7 @@ router = APIRouter(prefix="/v1", tags=["Account"])
     response_model=Account,
     summary="Your plan and the month so far",
     operation_id="get_account",
-    responses=problem_responses("not_found"),
+    responses=problem_responses(),
 )
 def get_account(
     who: Caller = Depends(caller),
@@ -36,11 +35,6 @@ def get_account(
         "FROM customers c JOIN subscriptions s ON s.customer_id = c.id WHERE c.id = ?",
         (who.customer_id,),
     ).fetchone()
-    if row is None:
-        raise QuillonError(
-            "not_found",
-            "We have no plan on file for this account. Write to support@quillonpost.co.uk.",
-        )
 
     today = now()
     month_start = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)

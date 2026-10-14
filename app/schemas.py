@@ -384,8 +384,8 @@ class BillingEvent(BaseModel):
 class BillingReceipt(BaseModel):
     id: str = Field(description="Our id for the event, which is kept whatever it does.")
     customer_id: str
-    plan: Optional[Literal[tuple(PLANS)]] = None  # type: ignore[valid-type]
-    status: Optional[Literal[SUBSCRIPTION_STATUSES]] = None  # type: ignore[valid-type]
+    plan: Literal[tuple(PLANS)]  # type: ignore[valid-type]
+    status: Literal[SUBSCRIPTION_STATUSES]  # type: ignore[valid-type]
     moved: bool = Field(
         description="False when the event left the subscription where it was: older than one "
         "we already hold, not one that moves a subscription in its state, or saying what it "

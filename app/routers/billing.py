@@ -95,20 +95,21 @@ def record_billing_event(
         (event_id, event.customer_id, event.type, occurred_at, pack(data), now_stamp()),
     )
 
-    row = conn.execute(
-        "SELECT * FROM subscriptions WHERE customer_id = ?", (event.customer_id,)
-    ).fetchone()
-    before = dict(row) if row is not None else None
+    before = dict(
+        conn.execute(
+            "SELECT * FROM subscriptions WHERE customer_id = ?", (event.customer_id,)
+        ).fetchone()
+    )
     after = before
     if latest is None or occurred_at >= latest:
-        after = billing.apply(before, event.customer_id, event.type, occurred_at, data)
-    moved = after is not None and after != before
+        after = billing.apply(before, event.type, occurred_at, data)
+    moved = after != before
     if moved:
         billing.save(conn, after)
     return {
         "id": event_id,
         "customer_id": event.customer_id,
-        "plan": after["plan"] if after else None,
-        "status": after["status"] if after else None,
+        "plan": after["plan"],
+        "status": after["status"],
         "moved": moved,
     }

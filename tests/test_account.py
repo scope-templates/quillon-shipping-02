@@ -2,9 +2,41 @@
 
 from datetime import timedelta
 
+from fastapi.testclient import TestClient
+
+from app.db import connect, prepare
 from app.ids import now, stamp
+from app.main import app
 from app.records import pack
 from conftest import DISPATCH, OTHER_KEY, PARCEL, RECIPIENT, SHOP
+
+# The two tables a key is looked up in, as a store made before subscriptions had them.
+OLDER_STORE = """
+CREATE TABLE customers (
+    id            TEXT PRIMARY KEY,
+    name          TEXT NOT NULL,
+    platform      TEXT NOT NULL,
+    city          TEXT NOT NULL,
+    contact_email TEXT NOT NULL,
+    status        TEXT NOT NULL,
+    created_at    TEXT NOT NULL,
+    dispatch_address TEXT
+);
+CREATE TABLE api_keys (
+    key          TEXT PRIMARY KEY,
+    customer_id  TEXT NOT NULL REFERENCES customers(id),
+    mode         TEXT NOT NULL,
+    label        TEXT NOT NULL,
+    created_at   TEXT NOT NULL,
+    last_used_at TEXT
+);
+INSERT INTO customers VALUES ('cus_olderstorewistow00001', 'Wistow Provisions', 'cartwell',
+    'Bristol', 'orders@wistowprovisions.co.uk', 'active', '2024-11-04T10:00:00Z', NULL);
+INSERT INTO customers VALUES ('cus_olderstorecranbourne1', 'Cranbourne Bakery', 'tillbox',
+    'Cranbourne', 'hello@cranbournebakery.co.uk', 'closed', '2024-08-01T09:00:00Z', NULL);
+INSERT INTO api_keys VALUES ('qp_live_olderstorewistowkey01', 'cus_olderstorewistow00001',
+    'live', 'Production', '2024-11-04T10:05:00Z', NULL);
+"""
 
 BOOKING = {
     "recipient": RECIPIENT,
@@ -101,3 +133,38 @@ def test_each_key_sees_its_own_account(client):
     assert mine["this_month"]["parcels"] == 0
 
     assert client.get("/v1/account").json()["code"] == "missing_credentials"
+
+
+def test_a_store_from_before_subscriptions_gives_every_shop_one(tmp_path, monkeypatch):
+    older = tmp_path / "older.sqlite"
+    conn = connect(older)
+    conn.executescript(OLDER_STORE)
+    prepare(conn)
+    rows = conn.execute(
+        "SELECT customer_id, plan, status, monthly_fee_pence, current_period_start, "
+        "trial_ends_at, started_at, cancelled_at FROM subscriptions ORDER BY customer_id"
+    ).fetchall()
+    assert [tuple(row) for row in rows] == [
+        ("cus_olderstorecranbourne1", "payg", "cancelled", 0, None, None,
+         "2024-08-01T09:00:00Z", None),
+        ("cus_olderstorewistow00001", "payg", "active", 0, None, None,
+         "2024-11-04T10:00:00Z", None),
+    ]
+    # Opening it again leaves them as they are.
+    prepare(conn)
+    again = conn.execute(
+        "SELECT customer_id, plan, status, monthly_fee_pence, current_period_start, "
+        "trial_ends_at, started_at, cancelled_at FROM subscriptions ORDER BY customer_id"
+    ).fetchall()
+    assert [tuple(row) for row in again] == [tuple(row) for row in rows]
+    conn.close()
+
+    monkeypatch.setenv("DATABASE_PATH", str(older))
+    with TestClient(app) as opened:
+        mine = opened.get(
+            "/v1/account", headers={"Authorization": "Bearer qp_live_olderstorewistowkey01"}
+        )
+    assert mine.status_code == 200
+    assert mine.json()["plan"] == "payg"
+    assert mine.json()["status"] == "active"
+    assert mine.json()["current_period_start"] is None
