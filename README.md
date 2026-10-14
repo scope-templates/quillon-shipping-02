@@ -108,9 +108,10 @@ One is a strict expected failure for a known issue listed at the top of `CHANGEL
 `data/seed.json` is the year to the first of September 2026: 140 shops, 218 keys, 6,039 parcels,
 and the ninety days of scans still in retention, with the webhook endpoints and deliveries that
 go with them. November and January are the busy months and one shop is a third of the volume.
-Every shop has a subscription, and the billing provider's 753 events for the year are there
-behind them: 73 shops on `payg`, 47 on `standard` and 20 on `volume`; twelve signups from the
-last six weeks still trialling, eight past due and the six closed accounts cancelled.
+Every shop has a subscription, and behind them are the billing provider's 832 events: the year's,
+and the start of every subscription that began before it, loaded in when the feed went live in
+July. 73 shops are on `payg`, 47 on `standard` and 20 on `volume`; twelve signups from the last
+six weeks are still trialling, eight are past due and the six closed accounts are cancelled.
 
 It is built by `python scripts/build_seed.py`, which runs off fixed seeds and writes the same
 bytes every time; `--check` tells you whether the file still matches the script. The service

@@ -29,6 +29,7 @@ from app.rates import (  # noqa: E402
 )
 from app import billing  # noqa: E402
 from app.ids import ALPHABET as ID_ALPHABET  # noqa: E402
+from app.ids import read_stamp  # noqa: E402
 from app.plans import TRIAL_PLAN, fee_for, one_month_on, parcel_price  # noqa: E402
 from app.tracking import status_after  # noqa: E402
 
@@ -74,6 +75,10 @@ PAST_DUE_WITHIN_DAYS = 60
 # us after the payment that settled them.
 RECOVERED_FAILURES = 7
 LATE_ARRIVALS = 2
+# The billing feed went live on 14 July 2026 (see CHANGELOG.md). Everything the provider had sent
+# before that day was loaded in that morning, a few seconds apart, in the order it happened.
+FEED_LIVE_FROM = datetime(2026, 7, 14, tzinfo=timezone.utc)
+BACKLOG_LOADED_AT = datetime(2026, 7, 14, 9, 30, tzinfo=timezone.utc)
 
 FAIL_WORDING = (
     "The card was declined",
@@ -875,10 +880,6 @@ def build_webhooks(rng, shops, shipments):
 YEAR_FROM = datetime(FIRST_DAY.year, FIRST_DAY.month, FIRST_DAY.day, tzinfo=timezone.utc)
 
 
-def parse(text):
-    return datetime.fromisoformat(text.replace("Z", "+00:00"))
-
-
 def moment_between(paper, first, last):
     """A time between the two, in working hours, for something a person did."""
     days = max((last - first).days, 0)
@@ -887,17 +888,19 @@ def moment_between(paper, first, last):
                        second=paper.randint(0, 59))
 
 
-def sign_up_recently(paper, shops):
-    """A dozen shops that never went live came in through the website in the last six weeks.
+def own_addresses(shops):
+    """One account to an email address: a second shop on one is written to at its own domain."""
+    taken = set()
+    for shop in shops:
+        if shop["contact_email"] in taken:
+            mailbox = shop["contact_email"].split("@")[0]
+            shop["contact_email"] = f"{mailbox}@{domain_for(shop['name'].removeprefix('The '))}"
+        taken.add(shop["contact_email"])
 
-    The form refuses an email address that already has an account, so none of them shares one.
-    """
-    emails = [shop["contact_email"] for shop in shops]
-    idle = [
-        shop for shop in shops
-        if not shop["_live"] and shop["status"] == "active"
-        and emails.count(shop["contact_email"]) == 1
-    ]
+
+def sign_up_recently(paper, shops):
+    """A dozen shops that never went live came in through the website in the last six weeks."""
+    idle = [shop for shop in shops if not shop["_live"] and shop["status"] == "active"]
     for shop in paper.sample(idle, TRIALLING_SHOPS):
         shop["_joined"] = LAST_DAY - timedelta(days=paper.randint(0, SIGNUP_WINDOW_DAYS - 1))
         shop["status"] = "trialling"
@@ -917,7 +920,7 @@ def last_activity(shop, keys, shipments):
         if row["customer_id"] == shop["id"]:
             stamps.extend(value for value in (row["created_at"], row["last_used_at"]) if value)
     stamps.extend(row["created_at"] for row in shipments if row["customer_id"] == shop["id"])
-    return parse(max(stamps))
+    return read_stamp(max(stamps))
 
 
 def plan_at(history, when):
@@ -951,7 +954,7 @@ def choose_plans(paper, shops, keys, shipments):
     for shop in shops:
         if shop["status"] == "trialling":
             continue
-        started[shop["id"]] = parse(shop["created_at"]) + timedelta(
+        started[shop["id"]] = read_stamp(shop["created_at"]) + timedelta(
             minutes=paper.randint(30, 3 * 24 * 60)
         )
         history[shop["id"]] = [(started[shop["id"]], final[shop["id"]])]
@@ -1008,7 +1011,7 @@ def choose_plans(paper, shops, keys, shipments):
 def price_on_plans(shipments, history):
     """The card price each parcel was booked at, less what its shop's plan took off that day."""
     for row in shipments:
-        plan = plan_at(history.get(row["customer_id"], []), parse(row["created_at"]))
+        plan = plan_at(history.get(row["customer_id"], []), read_stamp(row["created_at"]))
         row["price_pence"] = parcel_price(plan, row["price_pence"])
     return shipments
 
@@ -1070,7 +1073,7 @@ def build_billing(paper, shops, keys, shipments):
         if row["mode"] == "live" and row["status"] != "cancelled":
             charged = (row["created_at"], row["price_pence"])
             parcels.setdefault(row["customer_id"], []).append(charged)
-    last_parcel = {shop_id: parse(rows[-1][0]) for shop_id, rows in parcels.items()}
+    last_parcel = {shop_id: read_stamp(rows[-1][0]) for shop_id, rows in parcels.items()}
 
     def walk(shop, **extra):
         shop_id = shop["id"]
@@ -1126,7 +1129,7 @@ def build_billing(paper, shops, keys, shipments):
                 "type": kind,
                 "occurred_at": stamp(when),
                 "payload": data,
-                "received_at": stamp(when + timedelta(seconds=paper.randint(1, 40))),
+                "received_at": None,
             }
         )
 
@@ -1163,25 +1166,19 @@ def build_billing(paper, shops, keys, shipments):
         reasons.remove(reason)
         add(shop_id, "subscription.cancelled", when, {"reason": reason})
 
-    # Two failed payments that reached us after the payment that settled them.
-    by_invoice = {}
-    for row in events:
-        if row["type"].startswith("invoice."):
-            by_invoice.setdefault(row["payload"]["invoice"], []).append(row)
-    pairs = [
-        rows for rows in by_invoice.values()
-        if [row["type"] for row in rows] == ["invoice.payment_failed", "invoice.paid"]
+    # The year, and every start however long ago it was.
+    kept = [
+        row for row in events
+        if row["occurred_at"] >= stamp(YEAR_FROM) or row["type"] == "subscription.started"
     ]
-    for failed, paid in paper.sample(pairs, min(LATE_ARRIVALS, len(pairs))):
-        failed["received_at"] = stamp(parse(paid["received_at"]) + timedelta(
-            minutes=paper.randint(5, 90)))
+    arrive(paper, kept)
 
     subscriptions = []
     by_shop = {}
-    for row in events:
+    for row in kept:
         by_shop.setdefault(row["customer_id"], []).append(row)
     for shop in shops:
-        subscription = billing.trial(shop["id"], parse(shop["created_at"]))
+        subscription = billing.trial(shop["id"], read_stamp(shop["created_at"]))
         if shop["status"] != "trialling":
             # The shops Ada signed by hand had no trial to end.
             subscription["trial_ends_at"] = None
@@ -1196,9 +1193,44 @@ def build_billing(paper, shops, keys, shipments):
             raise AssertionError(f"{shop['name']} is {shop['status']} on a {subscription}")
         subscriptions.append(subscription)
 
-    kept = [row for row in events if row["occurred_at"] >= stamp(YEAR_FROM)]
     kept.sort(key=lambda row: (row["occurred_at"], row["id"]))
     return shipments, subscriptions, kept
+
+
+def arrive(paper, events):
+    """When each event reached us, which is the order the billing feed would have moved on.
+
+    The backlog came in on the morning the feed went live and everything since a few seconds after
+    it happened. Two failed payments in the backlog came in just after the payment that settled
+    them.
+    """
+    live_from = stamp(FEED_LIVE_FROM)
+    by_invoice = {}
+    for row in events:
+        if row["type"].startswith("invoice.") and row["occurred_at"] < live_from:
+            by_invoice.setdefault(row["payload"]["invoice"], []).append(row)
+    pairs = [
+        rows for rows in by_invoice.values()
+        if [row["type"] for row in rows] == ["invoice.payment_failed", "invoice.paid"]
+    ]
+    behind = {
+        failed["id"]: paid["occurred_at"]
+        for failed, paid in paper.sample(pairs, min(LATE_ARRIVALS, len(pairs)))
+    }
+
+    def in_turn(row):
+        if row["id"] in behind:
+            return (behind[row["id"]], 1, row["id"])
+        return (row["occurred_at"], 0, row["id"])
+
+    moment = BACKLOG_LOADED_AT
+    for row in sorted((row for row in events if row["occurred_at"] < live_from), key=in_turn):
+        moment += timedelta(seconds=paper.randint(1, 4))
+        row["received_at"] = stamp(moment)
+    loaded = moment
+    for row in sorted((row for row in events if row["occurred_at"] >= live_from), key=in_turn):
+        arrived = max(read_stamp(row["occurred_at"]), loaded)
+        row["received_at"] = stamp(arrived + timedelta(seconds=paper.randint(1, 40)))
 
 
 # -------------------------------------------------------------------------------------- writing
@@ -1208,6 +1240,7 @@ def build():
     rng = random.Random(SEED)
     paper = random.Random(BILLING_SEED)
     shops = build_shops(rng)
+    own_addresses(shops)
     sign_up_recently(paper, shops)
     keys = build_keys(rng, shops)
     date_signups(shops, keys)
