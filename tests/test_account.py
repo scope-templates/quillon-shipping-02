@@ -153,9 +153,17 @@ def test_a_store_from_before_subscriptions_gives_every_shop_one(tmp_path, monkey
             ("cus_olderstorewistow00001", "payg", "active", 0, None, None,
              "2024-11-04T10:00:00Z", None),
         ]
-        # Opening it again leaves them as they are.
+        # Opening it again leaves them as they are, and finds the shop added since.
+        conn.execute(
+            "INSERT INTO customers VALUES ('cus_olderstorenetherby001', 'Netherby Cycles', "
+            "'own build', 'Netherby', 'shop@netherbycycles.co.uk', 'active', "
+            "'2025-06-18T14:20:00Z', NULL)"
+        )
         prepare(conn)
-        assert [tuple(row) for row in conn.execute(SUBSCRIPTIONS).fetchall()] == given
+        assert [tuple(row) for row in conn.execute(SUBSCRIPTIONS).fetchall()] == sorted(given + [
+            ("cus_olderstorenetherby001", "payg", "active", 0, None, None,
+             "2025-06-18T14:20:00Z", None),
+        ])
 
     monkeypatch.setenv("DATABASE_PATH", str(older))
     with TestClient(app) as opened:

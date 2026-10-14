@@ -303,6 +303,14 @@ def test_what_the_feed_will_not_take(client, provider):
     assert not_a_plan.json()["code"] == "validation_failed"
     assert "data.plan" in not_a_plan.json()["detail"]
 
+    not_ours = client.post(
+        FEED,
+        headers=provider,
+        json=event("subscription.plan_changed", "2026-09-04T10:00:00Z", plan="gold"),
+    )
+    assert not_ours.status_code == 422
+    assert "data.plan" in not_ours.json()["detail"]
+
     nested = client.post(
         FEED,
         headers=provider,

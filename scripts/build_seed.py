@@ -28,8 +28,7 @@ from app.rates import (  # noqa: E402
     service_rows,
 )
 from app import billing  # noqa: E402
-from app.ids import ALPHABET as ID_ALPHABET  # noqa: E402
-from app.ids import read_stamp  # noqa: E402
+from app.ids import ALPHABET as ID_ALPHABET, read_stamp  # noqa: E402
 from app.plans import TRIAL_PLAN, fee_for, one_month_on, parcel_price  # noqa: E402
 from app.tracking import status_after  # noqa: E402
 

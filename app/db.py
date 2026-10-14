@@ -36,8 +36,8 @@ CREATE TABLE IF NOT EXISTS api_keys (
 );
 CREATE INDEX IF NOT EXISTS api_keys_by_customer ON api_keys(customer_id);
 
--- One a shop. Moved on by what the billing provider posts to /billing/events. Pay as you go has
--- no period, so both period columns are empty on it.
+-- One for each shop. Moved on by what the billing provider posts to /billing/events. Pay as you
+-- go has no period, so both period columns are empty on it.
 CREATE TABLE IF NOT EXISTS subscriptions (
     customer_id          TEXT NOT NULL UNIQUE REFERENCES customers(id),
     plan                 TEXT NOT NULL,
@@ -209,14 +209,16 @@ def connect(where: Optional[Path] = None) -> sqlite3.Connection:
     return conn
 
 
-# A store from before subscriptions were kept: every shop in it goes on pay as you go, running
-# since it joined, or cancelled if it is closed, until the billing provider says otherwise.
+# A shop without a subscription, as every shop is in a store from before they were kept, goes on
+# pay as you go, running since it joined, or cancelled if it is closed, until the billing
+# provider says otherwise.
 FIRST_SUBSCRIPTIONS = """
 INSERT INTO subscriptions (customer_id, plan, status, monthly_fee_pence, current_period_start,
                            current_period_end, trial_ends_at, started_at, cancelled_at)
-SELECT id, 'payg', CASE status WHEN 'closed' THEN 'cancelled' ELSE 'active' END, 0, NULL, NULL,
-       NULL, created_at, NULL
-FROM customers WHERE NOT EXISTS (SELECT 1 FROM subscriptions)
+SELECT c.id, 'payg', CASE c.status WHEN 'closed' THEN 'cancelled' ELSE 'active' END, 0, NULL,
+       NULL, NULL, c.created_at, NULL
+FROM customers c
+WHERE NOT EXISTS (SELECT 1 FROM subscriptions s WHERE s.customer_id = c.id)
 """
 
 
