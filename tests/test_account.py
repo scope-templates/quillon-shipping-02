@@ -1,5 +1,6 @@
 """GET /v1/account: the plan, where the subscription stands, and the month so far."""
 
+from contextlib import closing
 from datetime import timedelta
 
 from fastapi.testclient import TestClient
@@ -37,6 +38,11 @@ INSERT INTO customers VALUES ('cus_olderstorecranbourne1', 'Cranbourne Bakery', 
 INSERT INTO api_keys VALUES ('qp_live_olderstorewistowkey01', 'cus_olderstorewistow00001',
     'live', 'Production', '2024-11-04T10:05:00Z', NULL);
 """
+
+SUBSCRIPTIONS = (
+    "SELECT customer_id, plan, status, monthly_fee_pence, current_period_start, trial_ends_at, "
+    "started_at, cancelled_at FROM subscriptions ORDER BY customer_id"
+)
 
 BOOKING = {
     "recipient": RECIPIENT,
@@ -137,27 +143,19 @@ def test_each_key_sees_its_own_account(client):
 
 def test_a_store_from_before_subscriptions_gives_every_shop_one(tmp_path, monkeypatch):
     older = tmp_path / "older.sqlite"
-    conn = connect(older)
-    conn.executescript(OLDER_STORE)
-    prepare(conn)
-    rows = conn.execute(
-        "SELECT customer_id, plan, status, monthly_fee_pence, current_period_start, "
-        "trial_ends_at, started_at, cancelled_at FROM subscriptions ORDER BY customer_id"
-    ).fetchall()
-    assert [tuple(row) for row in rows] == [
-        ("cus_olderstorecranbourne1", "payg", "cancelled", 0, None, None,
-         "2024-08-01T09:00:00Z", None),
-        ("cus_olderstorewistow00001", "payg", "active", 0, None, None,
-         "2024-11-04T10:00:00Z", None),
-    ]
-    # Opening it again leaves them as they are.
-    prepare(conn)
-    again = conn.execute(
-        "SELECT customer_id, plan, status, monthly_fee_pence, current_period_start, "
-        "trial_ends_at, started_at, cancelled_at FROM subscriptions ORDER BY customer_id"
-    ).fetchall()
-    assert [tuple(row) for row in again] == [tuple(row) for row in rows]
-    conn.close()
+    with closing(connect(older)) as conn:
+        conn.executescript(OLDER_STORE)
+        prepare(conn)
+        given = [tuple(row) for row in conn.execute(SUBSCRIPTIONS).fetchall()]
+        assert given == [
+            ("cus_olderstorecranbourne1", "payg", "cancelled", 0, None, None,
+             "2024-08-01T09:00:00Z", None),
+            ("cus_olderstorewistow00001", "payg", "active", 0, None, None,
+             "2024-11-04T10:00:00Z", None),
+        ]
+        # Opening it again leaves them as they are.
+        prepare(conn)
+        assert [tuple(row) for row in conn.execute(SUBSCRIPTIONS).fetchall()] == given
 
     monkeypatch.setenv("DATABASE_PATH", str(older))
     with TestClient(app) as opened:
