@@ -91,6 +91,69 @@ def test_a_start_puts_a_trialling_shop_on_its_plan(client, provider, conn):
     assert customer_status(conn, NEW_SHOP) == "active"
 
 
+def test_a_trialling_shop_only_starts_or_is_cancelled(client, provider, conn):
+    add_trialling_shop(conn)
+    for kind, extra in (
+        ("subscription.plan_changed", {"plan": "volume"}),
+        ("invoice.paid", {"amount_pence": 1200}),
+        ("invoice.payment_failed", {"amount_pence": 1200}),
+    ):
+        kept = client.post(
+            FEED, headers=provider, json=event(kind, "2026-08-25T11:00:00Z", NEW_SHOP, **extra)
+        )
+        assert kept.status_code == 200
+        assert kept.json()["moved"] is False
+        assert kept.json()["status"] == "trialling"
+    assert subscription(conn, NEW_SHOP)["plan"] == "payg"
+
+    cancelled = client.post(
+        FEED, headers=provider, json=event("subscription.cancelled", "2026-08-30T16:20:00Z",
+                                           NEW_SHOP, reason="Stopped selling online"),
+    )
+    assert cancelled.json()["status"] == "cancelled"
+    assert cancelled.json()["moved"] is True
+    assert customer_status(conn, NEW_SHOP) == "closed"
+
+
+def test_a_running_subscription_does_not_start_again(client, provider, conn):
+    again = client.post(
+        FEED,
+        headers=provider,
+        json=event("subscription.started", "2026-08-21T15:02:00Z", plan="volume"),
+    )
+    assert again.status_code == 200
+    assert again.json()["moved"] is False
+    assert again.json()["plan"] == "standard"
+    after = subscription(conn, SHOP)
+    assert after["started_at"] == "2024-11-04T10:00:00Z"
+    assert after["current_period_start"] == "2026-08-04T10:00:00Z"
+
+
+def test_a_shop_that_comes_back_starts_again(client, provider, conn):
+    theirs = {"Authorization": f"Bearer {OTHER_KEY}"}
+    client.post(
+        FEED, headers=provider, json=event("subscription.cancelled", "2026-09-10T17:45:00Z",
+                                           OTHER_SHOP),
+    )
+    assert client.get("/v1/carriers", headers=theirs).json()["code"] == "account_closed"
+
+    back = client.post(
+        FEED,
+        headers=provider,
+        json=event("subscription.started", "2026-11-02T09:00:00Z", OTHER_SHOP, plan="standard"),
+    )
+    assert back.json()["moved"] is True
+    assert back.json()["status"] == "active"
+    after = subscription(conn, OTHER_SHOP)
+    assert after["plan"] == "standard"
+    assert after["cancelled_at"] is None
+    assert after["started_at"] == "2025-06-18T14:20:00Z"
+    assert after["current_period_start"] == "2026-11-02T09:00:00Z"
+    assert after["current_period_end"] == "2026-12-02T09:00:00Z"
+    assert customer_status(conn, OTHER_SHOP) == "active"
+    assert client.get("/v1/carriers", headers=theirs).status_code == 200
+
+
 def test_a_plan_change_moves_the_plan_and_the_fee(client, provider, conn):
     moved = client.post(
         FEED,
@@ -147,7 +210,7 @@ def test_a_cancellation_closes_the_shop(client, provider, conn):
     assert refused.status_code == 401
     assert refused.json()["code"] == "account_closed"
 
-    # A cancelled subscription is finished with: what comes after it is kept and moves nothing.
+    # Until the shop starts again, what comes after a cancellation is kept and moves nothing.
     late = client.post(
         FEED, headers=provider, json=event("invoice.paid", "2026-09-18T14:20:00Z", OTHER_SHOP)
     )

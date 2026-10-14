@@ -135,18 +135,25 @@ as it went since the spring moving up to standard:
 }
 ```
 
-| Event | What it does to the subscription |
-| --- | --- |
-| `subscription.started` | Puts the shop on the plan in `data.plan`, `active`, with a period of a month from `occurred_at`. A trialling shop becomes an active one. |
-| `subscription.plan_changed` | Moves the shop to the plan in `data.plan` and its fee. The period stays as it was. |
-| `invoice.paid` | `active`, and a new period of a month from `occurred_at`. |
-| `invoice.payment_failed` | `past_due`. The shop's keys go on working. |
-| `subscription.cancelled` | `cancelled`, and the account is closed: every key on it answers `account_closed`. |
+What an event does depends on where the subscription stands when it arrives:
+
+| Subscription is | Event | What it does |
+| --- | --- | --- |
+| `trialling` | `subscription.started` | Puts the shop on the plan in `data.plan`, `active`, with a period of a month from `occurred_at`. That moment is `started_at`, and it is kept for good. |
+| `trialling` | `subscription.cancelled` | `cancelled`, and the account is closed. |
+| `active` or `past_due` | `subscription.plan_changed` | Moves the shop to the plan in `data.plan` and its fee. The period stays as it was. |
+| `active` or `past_due` | `invoice.paid` | `active`, and a new period of a month from `occurred_at`. |
+| `active` or `past_due` | `invoice.payment_failed` | `past_due`. The shop's keys go on working. |
+| `active` or `past_due` | `subscription.cancelled` | `cancelled`, and the account is closed: every key on it answers `account_closed`. |
+| `cancelled` | `subscription.started` | The shop has come back: `active` again on the plan in `data.plan`, with a new period, and its keys work again. |
+
+Anything else is kept and moves nothing: a trialling shop is not invoiced, a running
+subscription does not start a second time, and a cancelled one waits for a start.
 
 Every event is kept as it came, with whatever is in `data`, and has an id of ours. An event whose
-`occurred_at` is before the latest one we hold for that shop is kept and moves nothing, and nor
-does anything after a cancellation; `"moved": false` says so. `occurred_at` needs its zone, as
-in `2026-08-12T10:04:31Z`, and we keep it in UTC.
+`occurred_at` is before the latest one we hold for that shop is kept and moves nothing too;
+`"moved": false` says so. `occurred_at` needs its zone, as in `2026-08-12T10:04:31Z`, and we keep
+it in UTC.
 
 An unknown customer id is `404 not_found`, an event type not in the table is
 `422 validation_failed`, and a start or a plan change without a plan we sell is the same. The

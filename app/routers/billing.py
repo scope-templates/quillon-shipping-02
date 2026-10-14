@@ -71,7 +71,7 @@ def record_billing_event(
     """One event, matched to the shop by customer id, kept whatever it does.
 
     An event older than the latest one we hold for that shop is kept but moves nothing, and so is
-    anything after a cancellation.
+    one that does not apply to the state the subscription is in: see app.billing.apply.
     """
     check_secret(billing_secret)
     occurred_at = occurred_in_utc(event)

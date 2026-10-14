@@ -384,7 +384,8 @@ class BillingReceipt(BaseModel):
     status: Optional[Literal[SUBSCRIPTION_STATUSES]] = None  # type: ignore[valid-type]
     moved: bool = Field(
         description="False when the event left the subscription where it was: older than one "
-        "we already hold, after a cancellation, or saying what it already says."
+        "we already hold, not one that moves a subscription in its state, or saying what it "
+        "already says."
     )
 
 

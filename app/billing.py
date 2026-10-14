@@ -24,6 +24,9 @@ NAMES_A_PLAN = ("subscription.started", "subscription.plan_changed")
 
 STATUSES = ("trialling", "active", "past_due", "cancelled")
 
+# On a plan: what changes plan, is invoiced and can fall behind.
+RUNNING = ("active", "past_due")
+
 # subscription status -> the status on the customer row, which is what a key is checked against.
 CUSTOMER_STATUS = {
     "trialling": "trialling",
@@ -68,38 +71,43 @@ def apply(
     occurred_at: str,
     data: Dict[str, Any],
 ) -> Optional[Dict[str, Any]]:
-    """The subscription after one event, or None when there is still no subscription to move.
+    """The subscription after one event, the same as before when the event does not move it.
 
-    A cancelled subscription is finished with and stays as it is. Every event but a start needs a
-    subscription already there.
+    A trialling subscription starts or is cancelled. A running one changes plan, is invoiced or is
+    cancelled, and does not start a second time: `started_at` is the first start, kept for good.
+    A cancelled one starts again when the shop comes back. Every event but a start needs a
+    subscription already there; without one the answer is None.
     """
     if subscription is None:
         if event_type != "subscription.started":
             return None
         subscription = {field: None for field in FIELDS}
-        subscription["customer_id"] = customer_id
+        subscription.update(customer_id=customer_id, status="trialling")
     after = dict(subscription)
-    if after["status"] == "cancelled":
-        return after
+    status = after["status"]
 
     if event_type == "subscription.started":
-        after.update(
-            plan=data["plan"],
-            status="active",
-            monthly_fee_pence=fee_for(data["plan"]),
-            started_at=occurred_at,
-            cancelled_at=None,
-        )
-        after.update(period_from(occurred_at))
-    elif event_type == "subscription.plan_changed":
-        after.update(plan=data["plan"], monthly_fee_pence=fee_for(data["plan"]))
-    elif event_type == "invoice.paid":
-        after["status"] = "active"
-        after.update(period_from(occurred_at))
-    elif event_type == "invoice.payment_failed":
-        after["status"] = "past_due"
+        if status in ("trialling", "cancelled"):
+            after.update(
+                plan=data["plan"],
+                status="active",
+                monthly_fee_pence=fee_for(data["plan"]),
+                cancelled_at=None,
+            )
+            after.update(period_from(occurred_at))
+            if status == "trialling":
+                after["started_at"] = occurred_at
     elif event_type == "subscription.cancelled":
-        after.update(status="cancelled", cancelled_at=occurred_at)
+        if status != "cancelled":
+            after.update(status="cancelled", cancelled_at=occurred_at)
+    elif status in RUNNING:
+        if event_type == "subscription.plan_changed":
+            after.update(plan=data["plan"], monthly_fee_pence=fee_for(data["plan"]))
+        elif event_type == "invoice.paid":
+            after["status"] = "active"
+            after.update(period_from(occurred_at))
+        elif event_type == "invoice.payment_failed":
+            after["status"] = "past_due"
     return after
 
 

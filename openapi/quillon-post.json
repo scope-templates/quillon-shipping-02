@@ -3579,7 +3579,7 @@
           "Billing feed"
         ],
         "summary": "Record one event from the billing provider",
-        "description": "One event, matched to the shop by customer id, kept whatever it does.\n\nAn event older than the latest one we hold for that shop is kept but moves nothing, and so is\nanything after a cancellation.",
+        "description": "One event, matched to the shop by customer id, kept whatever it does.\n\nAn event older than the latest one we hold for that shop is kept but moves nothing, and so is\none that does not apply to the state the subscription is in: see app.billing.apply.",
         "operationId": "record_billing_event",
         "parameters": [
           {
@@ -4064,7 +4064,7 @@
           "moved": {
             "type": "boolean",
             "title": "Moved",
-            "description": "False when the event left the subscription where it was: older than one we already hold, after a cancellation, or saying what it already says."
+            "description": "False when the event left the subscription where it was: older than one we already hold, not one that moves a subscription in its state, or saying what it already says."
           }
         },
         "type": "object",
