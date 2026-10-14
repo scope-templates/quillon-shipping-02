@@ -267,6 +267,32 @@ class ScanReceipt(BaseModel):
     recorded: bool = Field(description="False when this scan was already on the parcel.")
 
 
+class AccountMonth(BaseModel):
+    """The calendar month so far, UTC, on the mode of the key that asked."""
+
+    month: str = Field(description="Which month, as 2026-08.")
+    parcels: int = Field(description="Parcels booked this month and not cancelled.")
+    spend_pence: int = Field(description="What those parcels cost, at the plan's prices.")
+    last_booked_at: Optional[str] = Field(
+        default=None, description="The latest of them, or null when the month has none."
+    )
+
+
+class Account(BaseModel):
+    """One account as its own key sees it."""
+
+    id: str
+    name: str
+    platform: str
+    mode: Mode
+    plan: Literal[tuple(PLANS)]  # type: ignore[valid-type]
+    status: Literal[SUBSCRIPTION_STATUSES]  # type: ignore[valid-type]
+    current_period_start: str
+    current_period_end: str
+    trial_ends_at: Optional[str] = None
+    this_month: AccountMonth
+
+
 class SignupRequest(BaseModel):
     """What the form on the website asks a shop for."""
 

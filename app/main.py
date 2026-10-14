@@ -14,6 +14,7 @@ from app.auth import mode_of
 from app.db import connect, get_conn, open_store
 from app.errors import MEDIA_TYPE, QuillonError
 from app.routers import (
+    account,
     billing,
     carriers,
     labels,
@@ -43,6 +44,7 @@ TAGS = [
     {"name": "Shipments", "description": "Booking a parcel, the label, the cancel, the tracking."},
     {"name": "Webhooks", "description": "Being told about a parcel instead of asking."},
     {"name": "Carriers", "description": "Who we route to and what they sell."},
+    {"name": "Account", "description": "Your plan, and how the month is going so far."},
     {"name": "Labels", "description": "The PDF behind a label link."},
     {"name": "Signups", "description": "A new shop from the form on the website."},
     {"name": "Service", "description": "Is it up."},
@@ -178,6 +180,7 @@ app.include_router(rates.router)
 app.include_router(shipments.router)
 app.include_router(webhooks.router)
 app.include_router(carriers.router)
+app.include_router(account.router)
 app.include_router(labels.router)
 app.include_router(signups.router)
 app.include_router(scans.router)

@@ -2973,6 +2973,214 @@
         ]
       }
     },
+    "/v1/account": {
+      "get": {
+        "tags": [
+          "Account"
+        ],
+        "summary": "Your plan and the month so far",
+        "description": "The account the key belongs to and nothing else.\n\nThe month is the calendar month in UTC, counted on the mode of the key: a test key sees its\ntest parcels, which are never invoiced. A parcel cancelled before collection is not counted.",
+        "operationId": "get_account",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Account"
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key on the request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "examples": {
+                  "missing_credentials": {
+                    "summary": "No API key on the request",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#missing_credentials",
+                      "title": "No API key on the request",
+                      "status": 401,
+                      "detail": "No API key on the request",
+                      "code": "missing_credentials"
+                    }
+                  },
+                  "invalid_key": {
+                    "summary": "That API key is not one of ours",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#invalid_key",
+                      "title": "That API key is not one of ours",
+                      "status": 401,
+                      "detail": "That API key is not one of ours",
+                      "code": "invalid_key"
+                    }
+                  },
+                  "account_closed": {
+                    "summary": "That account is closed",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#account_closed",
+                      "title": "That account is closed",
+                      "status": 401,
+                      "detail": "That account is closed",
+                      "code": "account_closed"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "404": {
+            "description": "No such thing here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "examples": {
+                  "not_found": {
+                    "summary": "No such thing here",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#not_found",
+                      "title": "No such thing here",
+                      "status": 404,
+                      "detail": "No such thing here",
+                      "code": "not_found"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "Requests allowed on this key in a minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    600
+                  ]
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "What is left of the limit in this minute.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    573
+                  ]
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix seconds at which the minute turns over.",
+                "schema": {
+                  "type": "integer",
+                  "examples": [
+                    1788080460
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/labels/{token}.pdf": {
       "get": {
         "tags": [
@@ -3528,6 +3736,124 @@
   },
   "components": {
     "schemas": {
+      "Account": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "platform": {
+            "type": "string",
+            "title": "Platform"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "test",
+              "live"
+            ],
+            "title": "Mode"
+          },
+          "plan": {
+            "type": "string",
+            "enum": [
+              "payg",
+              "standard",
+              "volume"
+            ],
+            "title": "Plan"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "trialling",
+              "active",
+              "past_due",
+              "cancelled"
+            ],
+            "title": "Status"
+          },
+          "current_period_start": {
+            "type": "string",
+            "title": "Current Period Start"
+          },
+          "current_period_end": {
+            "type": "string",
+            "title": "Current Period End"
+          },
+          "trial_ends_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trial Ends At"
+          },
+          "this_month": {
+            "$ref": "#/components/schemas/AccountMonth"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "platform",
+          "mode",
+          "plan",
+          "status",
+          "current_period_start",
+          "current_period_end",
+          "this_month"
+        ],
+        "title": "Account",
+        "description": "One account as its own key sees it."
+      },
+      "AccountMonth": {
+        "properties": {
+          "month": {
+            "type": "string",
+            "title": "Month",
+            "description": "Which month, as 2026-08."
+          },
+          "parcels": {
+            "type": "integer",
+            "title": "Parcels",
+            "description": "Parcels booked this month and not cancelled."
+          },
+          "spend_pence": {
+            "type": "integer",
+            "title": "Spend Pence",
+            "description": "What those parcels cost, at the plan's prices."
+          },
+          "last_booked_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Booked At",
+            "description": "The latest of them, or null when the month has none."
+          }
+        },
+        "type": "object",
+        "required": [
+          "month",
+          "parcels",
+          "spend_pence"
+        ],
+        "title": "AccountMonth",
+        "description": "The calendar month so far, UTC, on the mode of the key that asked."
+      },
       "Address": {
         "properties": {
           "name": {
@@ -4908,6 +5234,10 @@
     {
       "name": "Carriers",
       "description": "Who we route to and what they sell."
+    },
+    {
+      "name": "Account",
+      "description": "Your plan, and how the month is going so far."
     },
     {
       "name": "Labels",
