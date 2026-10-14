@@ -24,7 +24,8 @@ neither of them caught anybody out.
 
 Anything that cannot break code we do without a new version, and you get it the day we deploy:
 
-- a new endpoint
+- a new endpoint, with any refusal codes of its own, as `POST /signups` came with
+  `email_in_use`
 - a new optional field in a request
 - a new field in a response, so parse leniently and ignore what you do not know
 - a new value in a list we already return, such as another carrier in `GET /v1/carriers`

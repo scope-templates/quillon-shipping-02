@@ -69,6 +69,8 @@ three and the last:
 ```
 
 Cheapest first. Show the shopper whichever you like; each quote holds for thirty minutes.
+These are the card prices, which is what a shop on pay as you go pays; a shop on standard or
+volume gets its own lower price back from the same call.
 
 ## 2. Book it
 
@@ -151,5 +153,6 @@ it; no depot will take one.
 - Follow the parcel: [tracking-and-webhooks.md](tracking-and-webhooks.md).
 - Stop one before it is collected: [shipments.md](shipments.md).
 - What a refusal looks like: [errors.md](errors.md).
+- Your plan and how the month is going: [account-and-billing.md](account-and-billing.md).
 - The interactive reference is at `/docs` on the API host, and the spec is
   `openapi/quillon-post.json` in the repository.

@@ -3936,12 +3936,12 @@
         "title": "BillingEvent",
         "description": "One event as the billing provider posts it to us.",
         "example": {
-          "customer_id": "cus_wq7tbkx4mdz2hy9vcnrfgp",
+          "customer_id": "cus_8pm86w9bg2vhgr6wkccmfn",
           "data": {
             "from_plan": "payg",
             "plan": "standard"
           },
-          "occurred_at": "2026-08-12T10:04:31Z",
+          "occurred_at": "2026-06-13T15:42:50Z",
           "type": "subscription.plan_changed"
         }
       },

@@ -65,9 +65,10 @@ Every refusal is a problem object, with the same five fields, served as
 }
 ```
 
-Branch on `code`. It is stable: a code never changes what it means, and a new one only ever
-arrives with a new dated version. `title` is the general case, `detail` is your particular
-request, and both may be reworded.
+Branch on `code`. It is stable: a code never changes what it means. A new code on a route you
+already call only arrives with a new dated version; a new route can bring codes of its own within
+a version, as `POST /signups` brought `email_in_use`. `title` is the general case, `detail` is
+your particular request, and both may be reworded.
 
 Every code, with a section each, is in [errors.md](errors.md). The short version:
 
@@ -85,13 +86,14 @@ Every code, with a section each, is in [errors.md](errors.md). The short version
 | `quote_expired` | 422 | The quote is older than thirty minutes. |
 | `idempotency_conflict` | 409 | That key was used on a different body. |
 | `reference_in_use` | 409 | That reference is on another of your shipments. |
+| `email_in_use` | 409 | On `POST /signups`: that email address already has an account. |
 | `not_cancellable` | 409 | The carrier has the parcel. |
 | `label_unavailable` | 409 | The shipment was cancelled. |
 | `rate_limited` | 429 | Too many calls this minute. See [authentication.md](authentication.md). |
 | `unexpected` | 5xx | Our fault. Retry; if it goes on, send us the time and we will look. |
 
-`not_scannable` and `invalid_carrier_secret` belong to the carrier scan feed and never reach a
-shop.
+`not_scannable` and `invalid_carrier_secret` belong to the carrier scan feed, and
+`invalid_billing_secret` to the billing provider's feed; none of the three reaches a shop.
 
 ### What to retry
 

@@ -49,12 +49,13 @@ rest). A scan appends a tracking event, moves the parcel on unless it would move
 and queues `tracking.updated` for anybody listening. It is not on `/v1` and no shop sees it.
 `POST /billing/events` is the same arrangement for the billing provider, on `BILLING_SECRET`:
 starts, plan changes, paid and failed invoices and cancellations, each kept, and each moving the
-shop's subscription unless it is older than one we already hold. And `POST /signups` is the form
+shop's subscription when it fits where the subscription stands and is not older than one we
+already hold. And `POST /signups` is the form
 on the website, which needs no key: the shop starts a thirty-day trial on `payg` with one test
 key, and the trial stays open until the billing provider starts a plan or cancels it.
 
-Every call carries a key, `qp_test_` or `qp_live_`, and only ever sees its own account and its
-own mode, except where Known issues in `CHANGELOG.md` says otherwise: a live key asking for a
+Every `/v1` call carries a key, `qp_test_` or `qp_live_`, and only ever sees its own account and
+its own mode, except where Known issues in `CHANGELOG.md` says otherwise: a live key asking for a
 parcel booked on the test key beside it gets `not_found`.
 Every response carries `Quillon-Version`, and every `/v1` response what is left of the rate
 limit. Every refusal is a problem object `{type, title, status, detail, code}` and the `code` is

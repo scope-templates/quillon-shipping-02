@@ -13,22 +13,24 @@ curl https://api.quillonpost.co.uk/v1/account \
   -H "Authorization: Bearer $QUILLON_KEY"
 ```
 
+This is Upcott Studio on the last day of August:
+
 ```json
 {
-  "id": "cus_wq7tbkx4mdz2hy9vcnrfgp",
-  "name": "Wistow Provisions",
+  "id": "cus_8pm86w9bg2vhgr6wkccmfn",
+  "name": "Upcott Studio",
   "platform": "cartwell",
   "mode": "live",
   "plan": "standard",
   "status": "active",
-  "current_period_start": "2026-08-04T10:00:00Z",
-  "current_period_end": "2026-09-04T10:00:00Z",
+  "current_period_start": "2026-08-13T02:28:40Z",
+  "current_period_end": "2026-09-13T02:28:40Z",
   "trial_ends_at": null,
   "this_month": {
     "month": "2026-08",
-    "parcels": 41,
-    "spend_pence": 18235,
-    "last_booked_at": "2026-08-29T09:05:00Z"
+    "parcels": 3,
+    "spend_pence": 2825,
+    "last_booked_at": "2026-08-25T11:45:11Z"
   }
 }
 ```
@@ -117,22 +119,22 @@ Billing-Secret: <the secret we set up with you>
 Content-Type: application/json
 ```
 
-one event to a request, matched to the shop by our customer id. This is a shop that has paid
-as it went since the spring moving up to standard:
+one event to a request, matched to the shop by our customer id. This is the shop above, which
+had paid as it went since January, moving up to standard in June:
 
 ```json
 {
   "type": "subscription.plan_changed",
-  "customer_id": "cus_wq7tbkx4mdz2hy9vcnrfgp",
-  "occurred_at": "2026-08-12T10:04:31Z",
+  "customer_id": "cus_8pm86w9bg2vhgr6wkccmfn",
+  "occurred_at": "2026-06-13T15:42:50Z",
   "data": {"from_plan": "payg", "plan": "standard"}
 }
 ```
 
 ```json
 {
-  "id": "bev_hq8xr2kd9wzmtc4vpbn7gs",
-  "customer_id": "cus_wq7tbkx4mdz2hy9vcnrfgp",
+  "id": "bev_thkjfdv6bn8z7ssmdn989k",
+  "customer_id": "cus_8pm86w9bg2vhgr6wkccmfn",
   "plan": "standard",
   "status": "active",
   "moved": true
@@ -156,8 +158,9 @@ subscription does not start a second time, and a cancelled one waits for a start
 
 Every event is kept as it came, with whatever is in `data`, and has an id of ours. An event whose
 `occurred_at` is before the latest one we hold for that shop is kept and moves nothing too;
-`"moved": false` says so. `occurred_at` needs its zone, as in `2026-08-12T10:04:31Z`, and we keep
-it in UTC.
+`"moved": false` says so. `occurred_at` needs its zone, as in `2026-06-13T15:42:50Z`, and we keep
+it in UTC. The events from before the feed went live on 14 July 2026 were loaded in that morning
+in the order they happened.
 
 An unknown customer id is `404 not_found`, an event type not in the table is
 `422 validation_failed`, and a start or a plan change without a plan we sell is the same. The
