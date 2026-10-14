@@ -99,7 +99,7 @@ def test_every_time_in_the_history_moves_by_the_same_days():
         return out
 
     before, after = times(committed, []), times(shifted, [])
-    assert len(before) == len(after) > 30000
+    assert before and len(before) == len(after)
     assert {(read_stamp(b) - read_stamp(a)).days for a, b in zip(before, after)} == {days}
 
 

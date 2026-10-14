@@ -7,7 +7,7 @@ day; the shop never has to know which. Tomasz and I started it in 2024 because w
 too long writing the same carrier integration twice. I look after the shops myself and keep the
 ones I am talking to in a spreadsheet of my own; Ada runs the integrations and answers support,
 and Callum writes the docs and the Python client. A hundred and forty shops are wired up to us
-and about sixty of them sent something last month; six thousand parcels went through us in the
+and about fifty of them sent something last month; six thousand parcels went through us in the
 year to September, a third of them from one shop. The shops that send the most are online brands
 with engineers of their own, who wired the API in themselves, and we took a small seed round in
 the spring of 2026. With the quoting and the tracking on top of that it comes to a few hundred
@@ -107,10 +107,10 @@ One is a strict expected failure for a known issue listed at the top of `CHANGEL
 
 ## The data
 
-`data/seed.json` is the year to the first of September 2026: 140 shops, 218 keys, 6,039 parcels,
+`data/seed.json` is the year to the first of September 2026: 140 shops, 218 keys, 5,958 parcels,
 and the ninety days of scans still in retention, with the webhook endpoints and deliveries that
 go with them. November and January are the busy months and one shop is a third of the volume.
-Every shop has a subscription, and behind them are the billing provider's 832 events: the year's,
+Every shop has a subscription, and behind them are the billing provider's 840 events: the year's,
 and the start of every subscription that began before it, loaded in when the feed went live in
 July. 73 shops are on `payg`, 47 on `standard` and 20 on `volume`; twelve signups from the last
 six weeks are still trialling, eight are past due and the six closed accounts are cancelled.

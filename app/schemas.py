@@ -376,8 +376,8 @@ class BillingEvent(BaseModel):
         json_schema_extra={
             "example": {
                 "type": "subscription.plan_changed",
-                "customer_id": "cus_8pm86w9bg2vhgr6wkccmfn",
-                "occurred_at": "2026-06-13T15:42:50Z",
+                "customer_id": "cus_tqjtmswf6jxhrdvfmfgg67",
+                "occurred_at": "2026-05-21T14:08:52Z",
                 "data": {"from_plan": "payg", "plan": "standard"},
             }
         }

@@ -76,6 +76,13 @@ PAST_DUE_WITHIN_DAYS = 60
 # us after the payment that settled them.
 RECOVERED_FAILURES = 7
 LATE_ARRIVALS = 2
+# Shops that sent steadily until a day in June or July and have sent nothing since: middling
+# live shops, neither the busiest few nor the smallest, with parcels in at least five of the six
+# months to June and one in the first weeks of June.
+STOPPED_SHOPS = 10
+STOPPED_FROM_RANK = 3
+STEADY_MONTHS = ("2026-01", "2026-02", "2026-03", "2026-04", "2026-05", "2026-06")
+STOPPED_BETWEEN = (date(2026, 6, 20), date(2026, 7, 31))
 # The billing feed went live on 14 July 2026 (see CHANGELOG.md). Everything the provider had sent
 # before that day was loaded in that morning, a few seconds apart, in the order it happened.
 FEED_LIVE_FROM = datetime(2026, 7, 14, tzinfo=timezone.utc)
@@ -907,6 +914,49 @@ def sign_up_recently(paper, shops):
         shop["status"] = "trialling"
 
 
+def stop_sending(paper, shops, keys, shipments, events):
+    """Ten live shops whose last parcel was in June or July. Their keys were last used that day."""
+    months, early_june = {}, set()
+    for row in shipments:
+        if row["mode"] == "live":
+            months.setdefault(row["customer_id"], set()).add(row["created_at"][:7])
+            if "2026-06-01" <= row["created_at"] < STOPPED_BETWEEN[0].isoformat():
+                early_june.add(row["customer_id"])
+    steady = [
+        shop for shop in [shop for shop in shops if shop["_live"]][STOPPED_FROM_RANK:-SMALLEST_TAIL]
+        if shop["id"] in early_june
+        and len(months[shop["id"]] & set(STEADY_MONTHS)) >= len(STEADY_MONTHS) - 1
+    ]
+    first, last = STOPPED_BETWEEN
+    stopped = {}
+    for shop in paper.sample(steady, min(STOPPED_SHOPS, len(steady))):
+        last_day = first + timedelta(days=paper.randint(0, (last - first).days))
+        stopped[shop["id"]] = stamp(datetime(last_day.year, last_day.month, last_day.day, 23, 59,
+                                             tzinfo=timezone.utc))
+    gone = {
+        row["id"] for row in shipments
+        if row["customer_id"] in stopped and row["mode"] == "live"
+        and row["created_at"] > stopped[row["customer_id"]]
+    }
+    shipments = [row for row in shipments if row["id"] not in gone]
+    events = [row for row in events if row["shipment_id"] not in gone]
+
+    last_parcel = {}
+    for row in shipments:
+        if row["customer_id"] in stopped and row["mode"] == "live":
+            last_parcel[row["customer_id"]] = max(
+                last_parcel.get(row["customer_id"], ""), row["created_at"]
+            )
+    for row in keys:
+        if row["customer_id"] in last_parcel:
+            last_used = read_stamp(last_parcel[row["customer_id"]]) + timedelta(
+                minutes=paper.randint(1, 240)
+            )
+            if row["last_used_at"] is None or row["last_used_at"] > stamp(last_used):
+                row["last_used_at"] = stamp(last_used)
+    return shipments, events
+
+
 def date_signups(shops, keys):
     """A signup and its test key are made in the same moment."""
     made = {row["customer_id"]: row["created_at"] for row in keys}
@@ -1250,6 +1300,7 @@ def build():
     shipments, events = build_parcels(rng, shops)
     shipments, events = strand_a_few(rng, shipments, events)
     shipments = repeat_a_few_references(rng, shipments)
+    shipments, events = stop_sending(paper, shops, keys, shipments, events)
     endpoints, deliveries = build_webhooks(rng, shops, shipments)
     shipments, subscriptions, billing_events = build_billing(paper, shops, keys, shipments)
     return {
