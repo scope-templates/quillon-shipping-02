@@ -13,6 +13,7 @@ PROBLEMS: Dict[str, Any] = {
     "invalid_key": (401, "That API key is not one of ours"),
     "account_closed": (401, "That account is closed"),
     "invalid_carrier_secret": (401, "That carrier secret is not one of ours"),
+    "invalid_billing_secret": (401, "That billing secret is not ours"),
     "not_found": (404, "No such thing here"),
     "method_not_allowed": (405, "That is not something you can do to this path"),
     "validation_failed": (422, "The request body will not do"),

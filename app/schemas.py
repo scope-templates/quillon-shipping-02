@@ -4,7 +4,10 @@ from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
+from app.billing import EVENT_TYPES as BILLING_EVENT_TYPES
+from app.billing import STATUSES as SUBSCRIPTION_STATUSES
 from app.errors import MEDIA_TYPE, PROBLEMS, example_for
+from app.plans import PLANS
 from app.rates import ZONES
 from app.tracking import EVENT_CODES, STATUSES
 from app.webhooks import EVENT_TYPES
@@ -262,6 +265,41 @@ class ScanReceipt(BaseModel):
     shipment_id: str
     status: Literal[STATUSES]  # type: ignore[valid-type]
     recorded: bool = Field(description="False when this scan was already on the parcel.")
+
+
+class BillingEvent(BaseModel):
+    """One event as the billing provider posts it to us."""
+
+    type: Literal[BILLING_EVENT_TYPES]  # type: ignore[valid-type]
+    customer_id: str = Field(min_length=4, max_length=40, description="Our id for the shop.")
+    occurred_at: str = Field(description="When it happened at the provider, UTC, ISO 8601.")
+    data: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="What the provider sends with it. The plan is in data.plan on a start and "
+        "on a plan change; the rest is kept as it came.",
+    )
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "type": "subscription.plan_changed",
+                "customer_id": "cus_wq7tbkx4mdz2hy9vcnrfgp",
+                "occurred_at": "2026-08-12T10:04:31Z",
+                "data": {"from_plan": "payg", "plan": "standard"},
+            }
+        }
+    )
+
+
+class BillingReceipt(BaseModel):
+    id: str = Field(description="Our id for the event, which is kept whatever it does.")
+    customer_id: str
+    plan: Optional[Literal[tuple(PLANS)]] = None  # type: ignore[valid-type]
+    status: Optional[Literal[SUBSCRIPTION_STATUSES]] = None  # type: ignore[valid-type]
+    moved: bool = Field(
+        description="False when the event left the subscription where it was: older than one "
+        "we already hold, after a cancellation, or saying what it already says."
+    )
 
 
 class Health(BaseModel):

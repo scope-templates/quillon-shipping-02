@@ -19,6 +19,7 @@ PREFIXES = {
     "webhook_delivery": "whd",
     "webhook_event": "whev",
     "label": "lbl",
+    "billing_event": "bev",
 }
 
 

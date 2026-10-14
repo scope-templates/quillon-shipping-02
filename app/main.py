@@ -13,7 +13,7 @@ from app import API_VERSION, SERVICE_VERSION, spec, throttle
 from app.auth import mode_of
 from app.db import connect, get_conn, open_store
 from app.errors import MEDIA_TYPE, QuillonError
-from app.routers import carriers, labels, rates, scans, shipments, webhooks
+from app.routers import billing, carriers, labels, rates, scans, shipments, webhooks
 from app.schemas import Health
 
 VERSION_HEADER = "Quillon-Version"
@@ -170,5 +170,6 @@ app.include_router(webhooks.router)
 app.include_router(carriers.router)
 app.include_router(labels.router)
 app.include_router(scans.router)
+app.include_router(billing.router)
 
 spec.install(app)

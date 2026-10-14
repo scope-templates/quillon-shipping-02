@@ -3255,6 +3255,166 @@
           }
         }
       }
+    },
+    "/billing/events": {
+      "post": {
+        "tags": [
+          "Billing feed"
+        ],
+        "summary": "Record one event from the billing provider",
+        "description": "One event, matched to the shop by customer id, kept whatever it does.\n\nAn event older than the latest one we hold for that shop is kept but moves nothing, and so is\nanything after a cancellation.",
+        "operationId": "record_billing_event",
+        "parameters": [
+          {
+            "name": "Billing-Secret",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Billing-Secret"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillingEvent"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingReceipt"
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "That billing secret is not ours",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "examples": {
+                  "invalid_billing_secret": {
+                    "summary": "That billing secret is not ours",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#invalid_billing_secret",
+                      "title": "That billing secret is not ours",
+                      "status": 401,
+                      "detail": "That billing secret is not ours",
+                      "code": "invalid_billing_secret"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such thing here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "examples": {
+                  "not_found": {
+                    "summary": "No such thing here",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#not_found",
+                      "title": "No such thing here",
+                      "status": 404,
+                      "detail": "No such thing here",
+                      "code": "not_found"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The request body will not do",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "examples": {
+                  "validation_failed": {
+                    "summary": "The request body will not do",
+                    "value": {
+                      "type": "https://quillonpost.co.uk/docs/errors#validation_failed",
+                      "title": "The request body will not do",
+                      "status": 422,
+                      "detail": "The request body will not do",
+                      "code": "validation_failed"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "Quillon-Version": {
+                "description": "The dated version this deployment speaks.",
+                "schema": {
+                  "type": "string",
+                  "examples": [
+                    "2026-08-01"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3349,6 +3509,114 @@
           "postcode"
         ],
         "title": "Address"
+      },
+      "BillingEvent": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "subscription.started",
+              "subscription.plan_changed",
+              "invoice.paid",
+              "invoice.payment_failed",
+              "subscription.cancelled"
+            ],
+            "title": "Type"
+          },
+          "customer_id": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 4,
+            "title": "Customer Id",
+            "description": "Our id for the shop."
+          },
+          "occurred_at": {
+            "type": "string",
+            "title": "Occurred At",
+            "description": "When it happened at the provider, UTC, ISO 8601."
+          },
+          "data": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Data",
+            "description": "What the provider sends with it. The plan is in data.plan on a start and on a plan change; the rest is kept as it came."
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "customer_id",
+          "occurred_at"
+        ],
+        "title": "BillingEvent",
+        "description": "One event as the billing provider posts it to us.",
+        "example": {
+          "customer_id": "cus_wq7tbkx4mdz2hy9vcnrfgp",
+          "data": {
+            "from_plan": "payg",
+            "plan": "standard"
+          },
+          "occurred_at": "2026-08-12T10:04:31Z",
+          "type": "subscription.plan_changed"
+        }
+      },
+      "BillingReceipt": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Our id for the event, which is kept whatever it does."
+          },
+          "customer_id": {
+            "type": "string",
+            "title": "Customer Id"
+          },
+          "plan": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "payg",
+                  "standard",
+                  "volume"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "trialling",
+                  "active",
+                  "past_due",
+                  "cancelled"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "moved": {
+            "type": "boolean",
+            "title": "Moved",
+            "description": "False when the event left the subscription where it was: older than one we already hold, after a cancellation, or saying what it already says."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "customer_id",
+          "moved"
+        ],
+        "title": "BillingReceipt"
       },
       "Carrier": {
         "properties": {

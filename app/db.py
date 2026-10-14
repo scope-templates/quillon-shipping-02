@@ -166,6 +166,18 @@ CREATE INDEX IF NOT EXISTS deliveries_due
 CREATE INDEX IF NOT EXISTS deliveries_by_endpoint
     ON webhook_deliveries(endpoint_id, created_at DESC);
 
+-- Everything the billing provider has posted, kept as it came, whether it moved anything or not.
+CREATE TABLE IF NOT EXISTS billing_events (
+    id          TEXT PRIMARY KEY,
+    customer_id TEXT NOT NULL REFERENCES customers(id),
+    type        TEXT NOT NULL,
+    occurred_at TEXT NOT NULL,
+    payload     TEXT NOT NULL,
+    received_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS billing_events_by_customer
+    ON billing_events(customer_id, occurred_at, id);
+
 CREATE TABLE IF NOT EXISTS idempotency_keys (
     customer_id   TEXT NOT NULL,
     key           TEXT NOT NULL,
