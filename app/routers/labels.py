@@ -28,9 +28,9 @@ router = APIRouter(tags=["Labels"])
 )
 def label_pdf(token: str, conn: sqlite3.Connection = Depends(get_conn)) -> Response:
     row = conn.execute(
-        "SELECT s.*, c.name AS carrier_name, k.label_logo FROM shipments s "
+        "SELECT s.*, c.name AS carrier_name, shop.label_logo FROM shipments s "
         "JOIN carriers c ON c.code = s.carrier_code "
-        "JOIN customers k ON k.id = s.customer_id WHERE s.label_token = ?",
+        "JOIN customers shop ON shop.id = s.customer_id WHERE s.label_token = ?",
         (token,),
     ).fetchone()
     if row is None or not row["label_expires_at"]:

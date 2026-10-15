@@ -96,8 +96,8 @@ capitals. Write to support@quillonpost.co.uk and we will find it for you.
 
 ## `key_limit_reached`
 
-**409.** When we issue a live key: the account already has as many as its plan includes. Roll
-one of them, or move to a plan that includes more.
+**409.** When we issue a live key: the account already has as many as its plan includes. Take
+one of them out of use first, or move to a plan that includes more.
 
 ## `not_cancellable`
 

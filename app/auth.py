@@ -78,8 +78,8 @@ def issue_key(
             raise QuillonError(
                 "key_limit_reached",
                 f"The {plan} plan includes {allowed} live "
-                f"{'key' if allowed == 1 else 'keys'} and the account has {held}. Roll one of "
-                "them, or move to a plan that includes more.",
+                f"{'key' if allowed == 1 else 'keys'} and the account has {held}. Move to a plan "
+                "that includes more, or take one of them out of use first.",
             )
     key = api_key(mode)
     conn.execute(

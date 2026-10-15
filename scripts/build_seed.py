@@ -686,7 +686,6 @@ def book_parcel(rng, card, shop, mode, day, created, prefix, counter, preferred,
     return counter, row, kept
 
 
-
 def build_parcels(rng, shops):
     card = card_lookup()
     live_shops = [shop for shop in shops if shop["_live"]]

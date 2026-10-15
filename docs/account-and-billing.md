@@ -51,7 +51,7 @@ none of the three numbers.
 
 | Plan | A month | Live calls a minute | Live keys | Labels | Off the card on every parcel |
 | --- | --- | --- | --- | --- | --- |
-| `payg` | nothing | 120 | one | plain | nothing |
+| `payg` | nothing | 120 | one | without a logo | nothing |
 | `standard` | £49 | 300 | three | with your logo | 3% |
 | `volume` | £199 | 1,000 | as many as you want | with your logo | 8%, and a named contact here |
 

@@ -34,7 +34,8 @@ the day you go live is the key.
 
 The key is the whole of the credential; there is no second half. Keep it on the server, out of
 the browser and out of your repository. Ask us to roll one and we issue the new key first, so
-you can swap it over before the old one stops.
+you can swap it over before the old one stops; on pay as you go, which has one live key, the new
+one takes the old one's place at once.
 
 If a key stops working you get a problem object rather than a bare 401 body:
 

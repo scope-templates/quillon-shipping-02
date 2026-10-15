@@ -62,6 +62,6 @@ def test_the_shops_logo_goes_on_the_label_when_its_plan_includes_it(client, live
     )
     assert b"WISTOW PROVISIONS" in printed(live)
 
-    # Netherby pays as it goes, which prints plain labels whatever is on the account.
+    # Netherby pays as it goes, which prints no logo whatever is on the account.
     conn.execute("UPDATE customers SET label_logo = 'NETHERBY' WHERE id = ?", (OTHER_SHOP,))
     assert b"NETHERBY" not in printed({"Authorization": f"Bearer {OTHER_KEY}"})
