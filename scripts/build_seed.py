@@ -119,7 +119,7 @@ MONTH_WEIGHT = {
 DAY_WEIGHT = (1.0, 1.0, 1.0, 1.0, 0.95, 0.38, 0.08)  # Monday through Sunday
 
 SHOP_FIRST = (
-    "Ashcombe", "Barrowfield", "Brindle", "Cawdon", "Marfield", "Netherby", "Wrenbury",
+    "Ashcombe", "Barrowfield", "Brinsop", "Cawdon", "Marfield", "Netherby", "Wrenbury",
     "Dunstall", "Halloway", "Penhale", "Redgate", "Stanbury", "Thornbeck", "Upcott",
     "Wybourne", "Calderstone", "Ellersby", "Fallowmere", "Granthorpe", "Haversham",
     "Ingleby", "Kirkstall", "Loxley", "Mereton", "Norbury", "Oakhanger", "Pinvin",

@@ -257,10 +257,14 @@ def store(tmp_path, monkeypatch):
     path = tmp_path / "quillon.sqlite"
     monkeypatch.setenv("DATABASE_PATH", str(path))
     conn = prepare(connect(path))
+    # One transaction for the whole world: a write of its own for each row is most of the time
+    # a test takes.
+    conn.execute("BEGIN")
     add_shops(conn)
     add_carriers(conn)
     add_parcels(conn)
     add_endpoint(conn)
+    conn.execute("COMMIT")
     conn.close()
     throttle.clear()
     yield path
