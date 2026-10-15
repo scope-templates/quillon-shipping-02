@@ -13,24 +13,24 @@ curl https://api.quillonpost.co.uk/v1/account \
   -H "Authorization: Bearer $QUILLON_KEY"
 ```
 
-This is Amberwell Trading Co on the last day of August:
+This is Granthorpe Cycles on the last day of August:
 
 ```json
 {
-  "id": "cus_tqjtmswf6jxhrdvfmfgg67",
-  "name": "Amberwell Trading Co",
-  "platform": "cartwell",
+  "id": "cus_pj2sjzcvzzjnbk9yx8z934",
+  "name": "Granthorpe Cycles",
+  "platform": "perchbox",
   "mode": "live",
   "plan": "standard",
   "status": "active",
-  "current_period_start": "2026-08-11T17:17:40Z",
-  "current_period_end": "2026-09-11T17:17:40Z",
+  "current_period_start": "2026-08-27T05:22:40Z",
+  "current_period_end": "2026-09-27T05:22:40Z",
   "trial_ends_at": null,
   "this_month": {
     "month": "2026-08",
     "parcels": 2,
-    "spend_pence": 1155,
-    "last_booked_at": "2026-08-24T09:31:36Z"
+    "spend_pence": 1515,
+    "last_booked_at": "2026-08-27T08:30:37Z"
   }
 }
 ```
@@ -124,21 +124,21 @@ Content-Type: application/json
 ```
 
 one event to a request, matched to the shop by our customer id. This is the shop above, which
-had paid as it went since October, moving up to standard in May:
+had paid as it went since February 2025, moving up to standard in March:
 
 ```json
 {
   "type": "subscription.plan_changed",
-  "customer_id": "cus_tqjtmswf6jxhrdvfmfgg67",
-  "occurred_at": "2026-05-21T14:08:52Z",
+  "customer_id": "cus_pj2sjzcvzzjnbk9yx8z934",
+  "occurred_at": "2026-03-22T14:08:52Z",
   "data": {"from_plan": "payg", "plan": "standard"}
 }
 ```
 
 ```json
 {
-  "id": "bev_vbgkykk38xf4zrtsj2x662",
-  "customer_id": "cus_tqjtmswf6jxhrdvfmfgg67",
+  "id": "bev_b729p59j7drg9xhb79gh9y",
+  "customer_id": "cus_pj2sjzcvzzjnbk9yx8z934",
   "plan": "standard",
   "status": "active",
   "moved": true
@@ -162,7 +162,7 @@ subscription does not start a second time, and a cancelled one waits for a start
 
 Every event is kept as it came, with whatever is in `data`, and has an id of ours. An event whose
 `occurred_at` is before the latest one we hold for that shop is kept and moves nothing too;
-`"moved": false` says so. `occurred_at` needs its zone, as in `2026-05-21T14:08:52Z`, and we keep
+`"moved": false` says so. `occurred_at` needs its zone, as in `2026-03-22T14:08:52Z`, and we keep
 it in UTC. The events from before the feed went live on 14 July 2026 were loaded in that morning
 in the order they happened.
 

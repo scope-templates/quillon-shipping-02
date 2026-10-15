@@ -1,17 +1,18 @@
 """Builds data/seed.json: shops, keys, a year of parcels and the scans still in retention, and
 every shop's subscription with the billing provider's year of events behind it.
 
-Two seeded Randoms, one for the shops and the parcels and one for the subscriptions and the
-billing, so a second run writes the same bytes. `--check` compares the committed file with what
-this script builds. Prices come off app.rates and app.plans, so a seeded price is one the quote
-endpoint would have given on the plan the shop was on that day; a parcel's status is whatever its
-last scan makes it, and a subscription is whatever app.billing makes of its events in the order
-they arrived.
+Three seeded Randoms, one for the shops and the parcels, one for the subscriptions and the
+billing, and one for the summer of the shops that grew, so a second run writes the same bytes.
+`--check` compares the committed file with what this script builds. Prices come off app.rates
+and app.plans, so a seeded price is one the quote endpoint would have given on the plan the shop
+was on that day; a parcel's status is whatever its last scan makes it, and a subscription is
+whatever app.billing makes of its events in the order they arrived.
 """
 
 import argparse
 import bisect
 import json
+import math
 import random
 import sys
 from datetime import date, datetime, timedelta, timezone
@@ -84,6 +85,12 @@ STOPPED_FROM_RANK = 3
 STEADY_MONTHS = ("2026-01", "2026-02", "2026-03", "2026-04", "2026-05", "2026-06")
 STOPPED_BETWEEN = (date(2026, 6, 20), date(2026, 7, 31))
 LOGO_SHARE = 0.6
+# Middling shops whose July and August are at least three times their months before.
+GROWING_PAYG = 10
+GROWING_STANDARD = 5
+RAMP_TIMES = 3
+RAMP_MONTHS = ((2026, 7), (2026, 8))
+RAMP_SEED = 20260701
 # The billing feed went live on 14 July 2026 (see CHANGELOG.md). Everything the provider had sent
 # before that day was loaded in that morning, a few seconds apart, in the order it happened.
 FEED_LIVE_FROM = datetime(2026, 7, 14, tzinfo=timezone.utc)
@@ -591,6 +598,95 @@ def timeline(rng, created, outcome, sender_city, recipient_city, depot, carrier_
     return events
 
 
+def book_parcel(rng, card, shop, mode, day, created, prefix, counter, preferred, scans_from):
+    """One parcel booked on a shop's key, with its scans still in retention.
+
+    Returns the shop's reference counter after it, and no shipment when nothing on the card would
+    carry the parcel or none of its scans had happened by the snapshot.
+    """
+    sender = shop["dispatch_address"]
+    recipient, zone = recipient_for(rng)
+    parcel = parcel_for(rng)
+    grams = chargeable_grams(
+        parcel["weight_grams"],
+        (
+            parcel["dimensions_cm"]["length_cm"],
+            parcel["dimensions_cm"]["width_cm"],
+            parcel["dimensions_cm"]["height_cm"],
+        ),
+    )
+    band = band_for(grams)
+    options = [
+        (carrier, service)
+        for carrier, service in services_for_zone(zone, grams)
+        if (carrier, service, zone, band) in card
+    ]
+    if day < BLUECOAT_FROM:
+        options = [pair for pair in options if pair[0] != "bluecoat"]
+    if not options:
+        return counter, None, []
+    liked = [pair for pair in options if pair[0] in preferred]
+    carrier_code, service = rng.choice(liked or options)
+    price, _days = card[(carrier_code, service, zone, band)]
+
+    counter += 1
+    outcome = outcome_for(rng)
+    depot = rng.choice(DEPOT_TOWNS)
+    scans = timeline(
+        rng, created, outcome, sender["city"], recipient["city"], depot, carrier_code
+    )
+    scans = [scan for scan in scans if scan[2] < AS_OF]
+    if not scans:
+        return counter, None, []
+    kept_scans = [scan for scan in scans if scan[2] >= scans_from]
+
+    shipment_id = make_id(rng, "shp")
+    carrier = next(row for row in CARRIERS if row["code"] == carrier_code)
+    last_code = scans[-1][0]
+    status = status_after(last_code)
+    row = {
+        "id": shipment_id,
+        "customer_id": shop["id"],
+        "mode": mode,
+        "carrier_code": carrier_code,
+        "service": service,
+        "status": status,
+        "tracking_number": carrier["tracking_prefix"] + "".join(
+            rng.choice("0123456789") for _ in range(10)
+        ),
+        "price_pence": price,
+        "recipient": recipient,
+        "parcel": parcel,
+        "created_at": stamp(created),
+    }
+    if rng.random() < 0.82:
+        row["reference"] = f"{prefix}-{counter}"
+    if rng.random() < 0.6:
+        row["quote_id"] = make_id(rng, "qt")
+    if day < SENDER_ON_EVERY_PARCEL_UNTIL:
+        # Before April 2026 there was no account address to fall back on.
+        row["sender"] = sender
+    for code, _where, when in scans:
+        if code == "collected":
+            row["collected_at"] = stamp(when)
+        elif code == "delivered":
+            row["delivered_at"] = stamp(when)
+        elif code == "cancelled":
+            row["cancelled_at"] = stamp(when)
+    kept = [
+        {
+            "id": make_id(rng, "evt"),
+            "shipment_id": shipment_id,
+            "code": code,
+            "location": where,
+            "occurred_at": stamp(when),
+        }
+        for code, where, when in kept_scans
+    ]
+    return counter, row, kept
+
+
+
 def build_parcels(rng, shops):
     card = card_lookup()
     live_shops = [shop for shop in shops if shop["_live"]]
@@ -610,7 +706,6 @@ def build_parcels(rng, shops):
     references = {}
     scans_from = AS_OF - timedelta(days=SCAN_RETENTION_DAYS)
     for shop, mode, count in work:
-        sender = shop["dispatch_address"]
         prefix = rng.choice(REFERENCE_PREFIX)
         counter = references.setdefault(shop["id"], rng.randint(1000, 90000))
         preferred = rng.sample(
@@ -626,86 +721,13 @@ def build_parcels(rng, shops):
             created = booked_at(rng, day)
             if created >= AS_OF:
                 continue
-            recipient, zone = recipient_for(rng)
-            parcel = parcel_for(rng)
-            grams = chargeable_grams(
-                parcel["weight_grams"],
-                (
-                    parcel["dimensions_cm"]["length_cm"],
-                    parcel["dimensions_cm"]["width_cm"],
-                    parcel["dimensions_cm"]["height_cm"],
-                ),
+            counter, row, kept = book_parcel(
+                rng, card, shop, mode, day, created, prefix, counter, preferred, scans_from
             )
-            band = band_for(grams)
-            options = [
-                (carrier, service)
-                for carrier, service in services_for_zone(zone, grams)
-                if (carrier, service, zone, band) in card
-            ]
-            if day < BLUECOAT_FROM:
-                options = [pair for pair in options if pair[0] != "bluecoat"]
-            if not options:
-                continue
-            liked = [pair for pair in options if pair[0] in preferred]
-            carrier_code, service = rng.choice(liked or options)
-            price, _days = card[(carrier_code, service, zone, band)]
-
-            counter += 1
             references[shop["id"]] = counter
-            outcome = outcome_for(rng)
-            depot = rng.choice(DEPOT_TOWNS)
-            scans = timeline(
-                rng, created, outcome, sender["city"], recipient["city"], depot, carrier_code
-            )
-            scans = [scan for scan in scans if scan[2] < AS_OF]
-            if not scans:
-                continue
-            kept_scans = [scan for scan in scans if scan[2] >= scans_from]
-
-            shipment_id = make_id(rng, "shp")
-            carrier = next(row for row in CARRIERS if row["code"] == carrier_code)
-            last_code = scans[-1][0]
-            status = status_after(last_code)
-            row = {
-                "id": shipment_id,
-                "customer_id": shop["id"],
-                "mode": mode,
-                "carrier_code": carrier_code,
-                "service": service,
-                "status": status,
-                "tracking_number": carrier["tracking_prefix"] + "".join(
-                    rng.choice("0123456789") for _ in range(10)
-                ),
-                "price_pence": price,
-                "recipient": recipient,
-                "parcel": parcel,
-                "created_at": stamp(created),
-            }
-            if rng.random() < 0.82:
-                row["reference"] = f"{prefix}-{counter}"
-            if rng.random() < 0.6:
-                row["quote_id"] = make_id(rng, "qt")
-            if day < SENDER_ON_EVERY_PARCEL_UNTIL:
-                # Before April 2026 there was no account address to fall back on.
-                row["sender"] = sender
-            for code, _where, when in scans:
-                if code == "collected":
-                    row["collected_at"] = stamp(when)
-                elif code == "delivered":
-                    row["delivered_at"] = stamp(when)
-                elif code == "cancelled":
-                    row["cancelled_at"] = stamp(when)
-            shipments.append(row)
-            for code, where, when in kept_scans:
-                events.append(
-                    {
-                        "id": make_id(rng, "evt"),
-                        "shipment_id": shipment_id,
-                        "code": code,
-                        "location": where,
-                        "occurred_at": stamp(when),
-                    }
-                )
+            if row is not None:
+                shipments.append(row)
+                events.extend(kept)
 
     shipments.sort(key=lambda row: (row["created_at"], row["id"]))
     events.sort(key=lambda row: (row["occurred_at"], row["id"]))
@@ -956,7 +978,77 @@ def stop_sending(paper, shops, keys, shipments, events):
             )
             if row["last_used_at"] is not None and row["last_used_at"] > stamp(last_used):
                 row["last_used_at"] = stamp(last_used)
-    return shipments, events
+    return shipments, events, set(stopped)
+
+
+def months_before_july(shop, monthly):
+    """A shop's live parcels a month, on average, from the year's start or its own to June."""
+    joined = max(shop["_joined"], FIRST_DAY)
+    months = [
+        f"{year}-{month:02d}" for year, month in months_between(joined, date(2026, 6, 30))
+    ]
+    return sum(monthly.get(shop["id"], {}).get(month, 0) for month in months) / len(months)
+
+
+def ramp_up(ramp, shops, keys, shipments, events, stopped):
+    """Middling shops whose live parcels in July and August are three times what they had been.
+
+    Ten are on pay as you go and five on standard; every month of the two is above what the
+    middling shops that did not grow send in a month. Their live keys were in use at the end.
+    """
+    card = card_lookup()
+    live = [shop for shop in shops if shop["_live"]]
+    middling = [shop for shop in live[VOLUME_SHOPS:-SMALLEST_TAIL] if shop["id"] not in stopped]
+    chosen = ramp.sample(middling, GROWING_PAYG + GROWING_STANDARD)
+    growing = {shop["id"]: "payg" for shop in chosen[:GROWING_PAYG]}
+    growing.update({shop["id"]: "standard" for shop in chosen[GROWING_PAYG:]})
+
+    monthly = {}
+    for row in shipments:
+        if row["mode"] == "live":
+            counts = monthly.setdefault(row["customer_id"], {})
+            counts[row["created_at"][:7]] = counts.get(row["created_at"][:7], 0) + 1
+    others = sorted(
+        months_before_july(shop, monthly) for shop in middling if shop["id"] not in growing
+    )
+    middle = others[len(others) // 2]
+
+    scans_from = AS_OF - timedelta(days=SCAN_RETENTION_DAYS)
+    for shop in chosen:
+        mine = [
+            row for row in shipments if row["customer_id"] == shop["id"] and row["mode"] == "live"
+        ]
+        prefix = max(
+            (row for row in mine if row.get("reference")), key=lambda row: row["created_at"]
+        )["reference"].rsplit("-", 1)[0]
+        counter = max(
+            int(row["reference"].rsplit("-", 1)[1]) for row in mine
+            if row.get("reference", "").startswith(f"{prefix}-")
+        )
+        preferred = {row["carrier_code"] for row in mine}
+        wanted = math.ceil(max(RAMP_TIMES * months_before_july(shop, monthly), middle + 1))
+        for year, month in RAMP_MONTHS:
+            days = [date(year, month, day) for day in range(1, days_in(year, month) + 1)]
+            had = monthly.get(shop["id"], {}).get(f"{year}-{month:02d}", 0)
+            for _ in range(max(wanted + ramp.randint(0, 3) - had, 0)):
+                day = pick(ramp, days, [DAY_WEIGHT[day.weekday()] for day in days])
+                created = booked_at(ramp, day)
+                if created >= AS_OF:
+                    continue
+                counter, row, kept = book_parcel(
+                    ramp, card, shop, "live", day, created, prefix, counter, preferred, scans_from
+                )
+                if row is not None:
+                    shipments.append(row)
+                    events.extend(kept)
+
+    for row in keys:
+        if row["customer_id"] in growing and row["mode"] == "live" and row["last_used_at"]:
+            lately = stamp(AS_OF - timedelta(minutes=ramp.randint(5, 2 * 24 * 60)))
+            row["last_used_at"] = max(row["last_used_at"], lately)
+    shipments.sort(key=lambda row: (row["created_at"], row["id"]))
+    events.sort(key=lambda row: (row["occurred_at"], row["id"]))
+    return shipments, events, growing
 
 
 def date_signups(shops, keys):
@@ -985,7 +1077,7 @@ def plan_at(history, when):
     return plan
 
 
-def choose_plans(paper, shops, keys, shipments):
+def choose_plans(paper, shops, keys, shipments, growing):
     """Each shop's start, the plans it has been on and when, and when it cancelled if it did."""
     live = [shop for shop in shops if shop["_live"]]
     closed = [shop for shop in shops if shop["status"] == "closed"]
@@ -996,6 +1088,7 @@ def choose_plans(paper, shops, keys, shipments):
         final[shop["id"]] = "volume" if index < VOLUME_SHOPS else "standard"
     for shop in paper.sample(live[-SMALLEST_TAIL:], PAYG_IN_THE_TAIL):
         final[shop["id"]] = "payg"
+    final.update(growing)
     for shop, plan in zip(closed, paper.sample(CLOSED_PLANS, len(CLOSED_PLANS))):
         final[shop["id"]] = plan
     lately = sorted(idle, key=lambda shop: (shop["_joined"], shop["id"]))[-3 * IDLE_ON_STANDARD:]
@@ -1029,8 +1122,12 @@ def choose_plans(paper, shops, keys, shipments):
                                                  final[shop["id"]])]
 
     year_to = AS_OF - timedelta(days=3)
-    standard_live = [shop for shop in live if final[shop["id"]] == "standard"]
-    payg_live = [shop for shop in live if final[shop["id"]] == "payg"]
+    standard_live = [
+        shop for shop in live if final[shop["id"]] == "standard" and shop["id"] not in growing
+    ]
+    payg_live = [
+        shop for shop in live if final[shop["id"]] == "payg" and shop["id"] not in growing
+    ]
     for shop in paper.sample(live[1:VOLUME_SHOPS], 4):
         move(shop, "standard", YEAR_FROM, year_to)
     picked = paper.sample(standard_live, 7)
@@ -1116,9 +1213,9 @@ def invoice_walk(shop_id, history, begun, ends, parcels, fails=None, stops_at=No
     return out
 
 
-def build_billing(paper, shops, keys, shipments):
+def build_billing(paper, shops, keys, shipments, growing):
     """Every shop's subscription, and the year of billing events that put it where it is."""
-    started, cancelled, history = choose_plans(paper, shops, keys, shipments)
+    started, cancelled, history = choose_plans(paper, shops, keys, shipments, growing)
     shipments = price_on_plans(shipments, history)
 
     parcels = {}
@@ -1308,9 +1405,14 @@ def build():
     shipments, events = build_parcels(rng, shops)
     shipments, events = strand_a_few(rng, shipments, events)
     shipments = repeat_a_few_references(rng, shipments)
-    shipments, events = stop_sending(paper, shops, keys, shipments, events)
+    shipments, events, stopped = stop_sending(paper, shops, keys, shipments, events)
+    shipments, events, growing = ramp_up(
+        random.Random(RAMP_SEED), shops, keys, shipments, events, stopped
+    )
     endpoints, deliveries = build_webhooks(rng, shops, shipments)
-    shipments, subscriptions, billing_events = build_billing(paper, shops, keys, shipments)
+    shipments, subscriptions, billing_events = build_billing(
+        paper, shops, keys, shipments, growing
+    )
     return {
         "customers": [
             {key: value for key, value in shop.items() if not key.startswith("_")}
