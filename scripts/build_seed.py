@@ -29,7 +29,7 @@ from app.rates import (  # noqa: E402
 )
 from app import billing  # noqa: E402
 from app.ids import ALPHABET as ID_ALPHABET, read_stamp  # noqa: E402
-from app.plans import TRIAL_PLAN, fee_for, one_month_on, parcel_price  # noqa: E402
+from app.plans import PLANS, TRIAL_PLAN, fee_for, one_month_on, parcel_price  # noqa: E402
 from app.seed import SNAPSHOT  # noqa: E402
 from app.tracking import status_after  # noqa: E402
 
@@ -83,6 +83,7 @@ STOPPED_SHOPS = 10
 STOPPED_FROM_RANK = 3
 STEADY_MONTHS = ("2026-01", "2026-02", "2026-03", "2026-04", "2026-05", "2026-06")
 STOPPED_BETWEEN = (date(2026, 6, 20), date(2026, 7, 31))
+LOGO_SHARE = 0.6
 # The billing feed went live on 14 July 2026 (see CHANGELOG.md). Everything the provider had sent
 # before that day was loaded in that morning, a few seconds apart, in the order it happened.
 FEED_LIVE_FROM = datetime(2026, 7, 14, tzinfo=timezone.utc)
@@ -1246,6 +1247,12 @@ def build_billing(paper, shops, keys, shipments):
         if billing.CUSTOMER_STATUS[subscription["status"]] != shop["status"]:
             raise AssertionError(f"{shop['name']} is {shop['status']} on a {subscription}")
         subscriptions.append(subscription)
+
+    # Rather more than half the shops on a plan that prints a logo have given us one.
+    for shop, subscription in zip(shops, subscriptions):
+        shop["label_logo"] = None
+        if PLANS[subscription["plan"]]["logo_on_label"] and paper.random() < LOGO_SHARE:
+            shop["label_logo"] = shop["name"].removeprefix("The ").upper()
 
     kept.sort(key=lambda row: (row["occurred_at"], row["id"]))
     return shipments, subscriptions, kept

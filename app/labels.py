@@ -56,11 +56,15 @@ def check_inside(lines: List[Line]) -> None:
             raise ValueError(f"y={y} with {size} point text is off a {PAGE_HEIGHT} point page")
 
 
-def lay_out(shipment: Dict[str, Any], carrier_name: str) -> List[Line]:
+def lay_out(shipment: Dict[str, Any], carrier_name: str, logo: Optional[str] = None) -> List[Line]:
+    """The lines on a label, with the shop's logo across the top when its plan prints one."""
     recipient = unpacked(shipment["recipient"])
     parcel = unpacked(shipment["parcel"])
 
-    lines: List[Line] = [
+    lines: List[Line] = []
+    if logo:
+        lines.append((MARGIN, 545, 14, logo))
+    lines += [
         (MARGIN, 520, 18, carrier_name.upper()),
         (MARGIN, 496, 12, shipment["service"].replace("_", " ").title()),
     ]
@@ -84,10 +88,10 @@ def unpacked(value: Any) -> Dict[str, Any]:
     return json.loads(value) if isinstance(value, str) else value
 
 
-def pdf_bytes(shipment: Dict[str, Any], carrier_name: str) -> bytes:
+def pdf_bytes(shipment: Dict[str, Any], carrier_name: str, logo: Optional[str] = None) -> bytes:
     """The label itself. Built inline, so nothing has to be installed to print one."""
     body = ["BT"]
-    for x, y, size, text in lay_out(shipment, carrier_name):
+    for x, y, size, text in lay_out(shipment, carrier_name, logo):
         body.append(f"/F1 {size} Tf 1 0 0 1 {x} {y} Tm ({escape(text)}) Tj")
     body.append("ET")
     stream = "\n".join(body).encode("latin-1", "replace")

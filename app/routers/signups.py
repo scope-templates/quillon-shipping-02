@@ -8,7 +8,8 @@ from fastapi import APIRouter, Depends
 from app import billing
 from app.db import get_conn
 from app.errors import QuillonError
-from app.ids import api_key, new_id, now, stamp
+from app.auth import issue_key
+from app.ids import new_id, now, stamp
 from app.schemas import Signup, SignupRequest, problem_responses
 
 router = APIRouter(tags=["Signups"])
@@ -54,7 +55,6 @@ def create_signup(
         "created_at": stamp(at),
     }
     subscription = billing.trial(customer["id"], at)
-    key = api_key("test")
 
     conn.execute("BEGIN IMMEDIATE")
     try:
@@ -70,11 +70,7 @@ def create_signup(
             tuple(customer.values()),
         )
         billing.save(conn, subscription)
-        conn.execute(
-            "INSERT INTO api_keys (key, customer_id, mode, label, created_at) "
-            "VALUES (?, ?, 'test', ?, ?)",
-            (key, customer["id"], KEY_LABEL, customer["created_at"]),
-        )
+        key = issue_key(conn, customer["id"], "test", KEY_LABEL, customer["created_at"])
         conn.execute("COMMIT")
     except Exception:
         conn.execute("ROLLBACK")

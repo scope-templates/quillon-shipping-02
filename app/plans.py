@@ -1,17 +1,37 @@
-"""The three plans a shop can be on: what each costs a month and what it takes off the card.
+"""The three plans a shop can be on: what each costs a month and what comes with it.
 
-The rate card is the list price. A plan with a monthly fee takes a share off every parcel, and
-that is done where a parcel is priced, so the card itself never changes with the plan.
+A plan sets how many calls a live key may make in a minute, how many live keys the account may
+have (None is no limit), whether the shop's logo goes on its labels, and what it takes off the
+card. The rate card is the list price; the share comes off where a parcel is priced, so the card
+itself never changes with the plan.
 """
 
 import calendar
 from datetime import datetime
-from typing import Dict
+from typing import Any, Dict
 
-PLANS: Dict[str, Dict[str, int]] = {
-    "payg": {"monthly_fee_pence": 0, "parcel_discount_percent": 0},
-    "standard": {"monthly_fee_pence": 4900, "parcel_discount_percent": 5},
-    "volume": {"monthly_fee_pence": 19900, "parcel_discount_percent": 12},
+PLANS: Dict[str, Dict[str, Any]] = {
+    "payg": {
+        "monthly_fee_pence": 0,
+        "live_requests_per_minute": 120,
+        "live_keys": 1,
+        "logo_on_label": False,
+        "parcel_discount_percent": 0,
+    },
+    "standard": {
+        "monthly_fee_pence": 4900,
+        "live_requests_per_minute": 300,
+        "live_keys": 3,
+        "logo_on_label": True,
+        "parcel_discount_percent": 3,
+    },
+    "volume": {
+        "monthly_fee_pence": 19900,
+        "live_requests_per_minute": 1000,
+        "live_keys": None,
+        "logo_on_label": True,
+        "parcel_discount_percent": 8,
+    },
 }
 
 # A signup from the website starts here. A trial stays open until the billing provider starts a

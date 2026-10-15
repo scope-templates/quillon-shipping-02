@@ -94,6 +94,11 @@ are unique per account and per mode, so a test parcel and a live parcel can shar
 **409.** On `POST /signups`: there is already an account with that contact email, in whatever
 capitals. Write to support@quillonpost.co.uk and we will find it for you.
 
+## `key_limit_reached`
+
+**409.** When we issue a live key: the account already has as many as its plan includes. Roll
+one of them, or move to a plan that includes more.
+
 ## `not_cancellable`
 
 **409.** The parcel is past `created` and the carrier has it. The `detail` is written to be

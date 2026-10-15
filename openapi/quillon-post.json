@@ -88,11 +88,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -101,7 +101,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -168,11 +168,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -181,7 +181,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -241,11 +241,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -254,7 +254,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -339,11 +339,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -352,7 +352,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -428,11 +428,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -441,7 +441,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -521,11 +521,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -534,7 +534,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -591,11 +591,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -604,7 +604,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -709,11 +709,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -722,7 +722,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -789,11 +789,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -802,7 +802,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -862,11 +862,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -875,7 +875,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -937,11 +937,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -950,7 +950,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -1017,11 +1017,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -1030,7 +1030,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -1080,11 +1080,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -1093,7 +1093,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -1128,11 +1128,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -1141,7 +1141,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -1204,11 +1204,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -1217,7 +1217,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -1284,11 +1284,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -1297,7 +1297,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -1347,11 +1347,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -1360,7 +1360,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -1407,11 +1407,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -1420,7 +1420,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -1455,11 +1455,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -1468,7 +1468,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -1547,11 +1547,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -1560,7 +1560,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -1636,11 +1636,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -1649,7 +1649,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -1699,11 +1699,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -1712,7 +1712,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -1769,11 +1769,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -1782,7 +1782,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -1817,11 +1817,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -1830,7 +1830,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -1893,11 +1893,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -1906,7 +1906,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -1973,11 +1973,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -1986,7 +1986,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -2036,11 +2036,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -2049,7 +2049,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -2084,11 +2084,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -2097,7 +2097,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -2177,11 +2177,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -2190,7 +2190,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -2266,11 +2266,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -2279,7 +2279,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -2329,11 +2329,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -2342,7 +2342,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -2389,11 +2389,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -2402,7 +2402,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -2451,11 +2451,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -2464,7 +2464,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -2531,11 +2531,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -2544,7 +2544,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -2603,11 +2603,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -2616,7 +2616,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -2683,11 +2683,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -2696,7 +2696,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -2746,11 +2746,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -2759,7 +2759,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -2794,11 +2794,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -2807,7 +2807,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -2854,11 +2854,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -2867,7 +2867,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -2934,11 +2934,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -2947,7 +2947,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -3002,11 +3002,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -3015,7 +3015,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -3082,11 +3082,11 @@
                 }
               },
               "X-RateLimit-Limit": {
-                "description": "Requests allowed on this key in a minute.",
+                "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    600
+                    300
                   ]
                 }
               },
@@ -3095,7 +3095,7 @@
                 "schema": {
                   "type": "integer",
                   "examples": [
-                    573
+                    273
                   ]
                 }
               },
@@ -5150,11 +5150,11 @@
             }
           },
           "X-RateLimit-Limit": {
-            "description": "Requests allowed on this key in a minute.",
+            "description": "Requests allowed on this key in a minute, which on a live key is the plan's.",
             "schema": {
               "type": "integer",
               "examples": [
-                600
+                300
               ]
             }
           },
@@ -5163,7 +5163,7 @@
             "schema": {
               "type": "integer",
               "examples": [
-                573
+                273
               ]
             }
           },

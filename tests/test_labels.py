@@ -1,6 +1,6 @@
 """Labels: the link, the PDF behind it, and what a test key gets."""
 
-from conftest import PARCEL, RECIPIENT
+from conftest import OTHER_KEY, OTHER_SHOP, PARCEL, RECIPIENT, SHOP
 
 CREATED = "shp_wistow00000000000004"
 
@@ -47,3 +47,21 @@ def test_a_cancelled_parcel_has_no_label_and_its_old_link_stops_working(client, 
     assert answer.status_code == 409
     assert answer.json()["code"] == "label_unavailable"
     assert client.get(label["url"].replace("http://testserver", "")).status_code == 404
+
+
+def test_the_shops_logo_goes_on_the_label_when_its_plan_includes_it(client, live, conn):
+    def printed(headers):
+        made = client.post("/v1/shipments", headers=headers, json=BODY).json()
+        label = client.post(f"/v1/shipments/{made['id']}/label", headers=headers).json()
+        return client.get(label["url"].replace("http://testserver", "")).content
+
+    assert b"WISTOW" not in printed(live)
+
+    conn.execute(
+        "UPDATE customers SET label_logo = 'WISTOW PROVISIONS' WHERE id = ?", (SHOP,)
+    )
+    assert b"WISTOW PROVISIONS" in printed(live)
+
+    # Netherby pays as it goes, which prints plain labels whatever is on the account.
+    conn.execute("UPDATE customers SET label_logo = 'NETHERBY' WHERE id = ?", (OTHER_SHOP,))
+    assert b"NETHERBY" not in printed({"Authorization": f"Bearer {OTHER_KEY}"})

@@ -4,8 +4,11 @@ import threading
 import time
 from typing import Dict, Optional, Tuple
 
+from app.plans import PLANS, TRIAL_PLAN
+
 WINDOW_SECONDS = 60
-LIMITS = {"live": 600, "test": 120}
+# A test key has the same allowance on every plan. A live key has its plan's, from app.plans.
+LIMITS = {"test": 120}
 ANONYMOUS_LIMIT = 60
 
 LIMIT_HEADER = "X-RateLimit-Limit"
@@ -16,7 +19,9 @@ _counts: Dict[str, Tuple[int, int]] = {}
 _lock = threading.Lock()
 
 
-def limit_for(mode: str) -> int:
+def limit_for(mode: str, plan: str = TRIAL_PLAN) -> int:
+    if mode == "live":
+        return PLANS[plan]["live_requests_per_minute"]
     return LIMITS.get(mode, ANONYMOUS_LIMIT)
 
 

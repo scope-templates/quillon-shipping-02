@@ -29,7 +29,7 @@ This is Amberwell Trading Co on the last day of August:
   "this_month": {
     "month": "2026-08",
     "parcels": 2,
-    "spend_pence": 1130,
+    "spend_pence": 1155,
     "last_booked_at": "2026-08-24T09:31:36Z"
   }
 }
@@ -49,11 +49,15 @@ none of the three numbers.
 
 ## Plans
 
-| Plan | A month | Off the card on every parcel |
-| --- | --- | --- |
-| `payg` | nothing | nothing |
-| `standard` | £49 | 5% |
-| `volume` | £199 | 12% |
+| Plan | A month | Live calls a minute | Live keys | Labels | Off the card on every parcel |
+| --- | --- | --- | --- | --- | --- |
+| `payg` | nothing | 120 | one | plain | nothing |
+| `standard` | £49 | 300 | three | with your logo | 3% |
+| `volume` | £199 | 1,000 | as many as you want | with your logo | 8%, and a named contact here |
+
+A test key is allowed 120 calls a minute on every plan, and test keys do not count towards the
+live ones. The logo is the wordmark we hold on your account; send it to support and we will set
+it, and labels on a plan that prints one carry it across the top.
 
 The rate card is the list price and it is the same for every shop. The plan takes its share off
 each line when a parcel is quoted or booked, rounded to the nearest 5p as the card is, so

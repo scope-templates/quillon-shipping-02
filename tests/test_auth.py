@@ -1,7 +1,11 @@
 """Keys: who gets in, who does not, and what a key can see."""
 
+import pytest
+
 from app import API_VERSION, throttle
-from conftest import CLOSED_KEY
+from app.auth import issue_key
+from app.errors import QuillonError
+from conftest import CLOSED_KEY, OTHER_KEY, OTHER_SHOP, SHOP
 
 
 def test_health_answers_without_a_key_and_names_the_version(client):
@@ -70,3 +74,32 @@ def test_a_key_we_cannot_place_is_counted_as_a_stranger(client, monkeypatch):
     third = client.get("/v1/carriers", headers=other)
     assert third.status_code == 429
     assert third.json()["code"] == "rate_limited"
+
+
+def test_a_live_key_is_allowed_what_its_plan_allows(client, live, sandbox):
+    throttle.clear()
+    on_standard = client.get("/v1/carriers", headers=live)
+    assert on_standard.headers["X-RateLimit-Limit"] == "300"
+    on_payg = client.get("/v1/carriers", headers={"Authorization": f"Bearer {OTHER_KEY}"})
+    assert on_payg.headers["X-RateLimit-Limit"] == "120"
+    # A test key has its own allowance, whatever the plan.
+    assert client.get("/v1/carriers", headers=sandbox).headers["X-RateLimit-Limit"] == "120"
+    assert throttle.limit_for("live", "volume") == 1000
+
+
+def test_a_plan_has_as_many_live_keys_as_it_includes(conn):
+    # Netherby pays as it goes, which is one live key, and it has it.
+    with pytest.raises(QuillonError) as refused:
+        issue_key(conn, OTHER_SHOP, "live", "Checkout")
+    assert refused.value.code == "key_limit_reached"
+    assert refused.value.status == 409
+    assert issue_key(conn, OTHER_SHOP, "test", "Integration").startswith("qp_test_")
+
+    # Wistow is on standard, which is three; it has one.
+    made = [issue_key(conn, SHOP, "live", label) for label in ("Checkout", "Warehouse")]
+    assert all(key.startswith("qp_live_") for key in made)
+    with pytest.raises(QuillonError):
+        issue_key(conn, SHOP, "live", "Staging")
+
+    conn.execute("UPDATE subscriptions SET plan = 'volume' WHERE customer_id = ?", (SHOP,))
+    assert issue_key(conn, SHOP, "live", "Staging").startswith("qp_live_")

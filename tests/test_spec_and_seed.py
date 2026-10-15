@@ -118,12 +118,13 @@ def test_every_answer_carries_the_version_and_what_is_left_of_the_rate_limit(cli
     throttle.clear()
     answer = client.get("/v1/carriers", headers=live)
     assert answer.headers["Quillon-Version"] == API_VERSION
-    assert answer.headers["X-RateLimit-Limit"] == str(throttle.LIMITS["live"])
-    assert answer.headers["X-RateLimit-Remaining"] == str(throttle.LIMITS["live"] - 1)
+    on_standard = throttle.limit_for("live", "standard")
+    assert answer.headers["X-RateLimit-Limit"] == str(on_standard)
+    assert answer.headers["X-RateLimit-Remaining"] == str(on_standard - 1)
 
     second = client.get("/v1/carriers", headers=live)
-    assert second.headers["X-RateLimit-Remaining"] == str(throttle.LIMITS["live"] - 2)
+    assert second.headers["X-RateLimit-Remaining"] == str(on_standard - 2)
 
     refused = client.get("/v1/shipments/shp_nothing", headers=live)
     assert refused.status_code == 404
-    assert refused.headers["X-RateLimit-Limit"] == str(throttle.LIMITS["live"])
+    assert refused.headers["X-RateLimit-Limit"] == str(on_standard)

@@ -6,7 +6,7 @@ from app import API_VERSION
 from app.errors import MEDIA_TYPE, example_for
 from app.idempotency import REPLAY_HEADER
 from app.schemas import Problem
-from app.throttle import LIMIT_HEADER, LIMITS, REMAINING_HEADER, RESET_HEADER
+from app.throttle import LIMIT_HEADER, REMAINING_HEADER, RESET_HEADER, limit_for
 from app.webhooks import EVENT_TYPES, SIGNATURE_HEADER, TOLERANCE_SECONDS
 
 VERSION_HEADER = "Quillon-Version"
@@ -43,10 +43,12 @@ def common_headers(on_v1: bool) -> Dict[str, Any]:
     }
     if on_v1:
         headers[LIMIT_HEADER] = header(
-            "Requests allowed on this key in a minute.", LIMITS["live"], "integer"
+            "Requests allowed on this key in a minute, which on a live key is the plan's.",
+            limit_for("live", "standard"),
+            "integer",
         )
         headers[REMAINING_HEADER] = header(
-            "What is left of the limit in this minute.", 573, "integer"
+            "What is left of the limit in this minute.", 273, "integer"
         )
         headers[RESET_HEADER] = header(
             "Unix seconds at which the minute turns over.", 1788080460, "integer"

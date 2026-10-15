@@ -24,7 +24,8 @@ CREATE TABLE IF NOT EXISTS customers (
     contact_email TEXT NOT NULL,
     status        TEXT NOT NULL,
     created_at    TEXT NOT NULL,
-    dispatch_address TEXT
+    dispatch_address TEXT,
+    label_logo    TEXT
 );
 
 CREATE TABLE IF NOT EXISTS api_keys (
@@ -210,8 +211,15 @@ def connect(where: Optional[Path] = None) -> sqlite3.Connection:
     return conn
 
 
+# Columns added to a table after it was first made, put on a store older than them.
+ADDED_COLUMNS = (("customers", "label_logo", "TEXT"),)
+
+
 def prepare(conn: sqlite3.Connection) -> sqlite3.Connection:
     conn.executescript(SCHEMA)
+    for table, column, kind in ADDED_COLUMNS:
+        if column not in {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {kind}")
     give_missing_subscriptions(conn)
     return conn
 

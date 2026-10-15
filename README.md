@@ -41,8 +41,9 @@ calls a day, which is small enough that the four of us can run the whole thing.
 - **Account.** `GET /v1/account` is the account behind the key and nothing else: its plan, where
   its subscription stands, the period it is in (none on pay as you go), and the calendar month
   so far, which is the parcels, the spend and the last booking on the key's own mode. The plan
-  is `payg`, `standard` or `volume`, and the two with a monthly fee take their share off every
-  price on the card when a parcel is quoted or booked.
+  is `payg`, `standard` or `volume`, and it sets what a live key may call in a minute, how many
+  live keys the account may have, whether the shop's logo goes on its labels, and what comes off
+  the card when a parcel is quoted or booked.
 
 The carriers come in the other way. `POST /carriers/{code}/scans` is the feed they post to, one
 scan at a time, on a shared secret out of the environment (`CARRIER_SECRET_NORTHGATE` and the
@@ -86,7 +87,8 @@ pick a key out of `api_keys` and you are away.
 carrier's feed is closed. `BILLING_SECRET` is the same for the billing provider's feed.
 
 `python scripts/deliver_webhooks.py --loop` is the other half of a running service: it works
-through the delivery queue a minute at a time.
+through the delivery queue a minute at a time. `python scripts/issue_key.py <customer id> live`
+is how a shop gets its live key when it signs, up to the number its plan includes.
 
 The interactive reference is at <http://127.0.0.1:8000/docs> and `GET /health` needs no key.
 

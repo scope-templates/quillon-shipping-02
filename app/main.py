@@ -11,6 +11,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app import API_VERSION, SERVICE_VERSION, spec, throttle
 from app.auth import mode_of
+from app.billing import subscription_for
 from app.db import connect, get_conn, open_store
 from app.errors import MEDIA_TYPE, QuillonError
 from app.routers import (
@@ -117,14 +118,16 @@ def counted_as(request: Request):
         conn = connect()
         try:
             row = conn.execute(
-                "SELECT k.mode FROM api_keys k JOIN customers c ON c.id = k.customer_id "
+                "SELECT k.mode, k.customer_id FROM api_keys k "
+                "JOIN customers c ON c.id = k.customer_id "
                 "WHERE k.key = ? AND c.status != 'closed'",
                 (key,),
             ).fetchone()
+            plan = subscription_for(conn, row["customer_id"])["plan"] if row else None
         finally:
             conn.close()
         if row is not None:
-            return key, throttle.limit_for(row["mode"])
+            return key, throttle.limit_for(row["mode"], plan)
     where = request.client.host if request.client else "unknown"
     return f"anonymous:{where}", throttle.ANONYMOUS_LIMIT
 

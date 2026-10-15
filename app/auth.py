@@ -9,9 +9,9 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.db import get_conn
 from app.errors import QuillonError
-from app.ids import now_stamp
+from app.ids import api_key, now_stamp
 from app.billing import subscription_for
-from app.plans import TRIAL_PLAN
+from app.plans import PLANS, TRIAL_PLAN
 
 KEY_PREFIXES = ("qp_test_", "qp_live_")
 
@@ -59,6 +59,34 @@ def lookup(conn: sqlite3.Connection, key: str) -> Optional[Caller]:
         dispatch_address=row["dispatch_address"],
         plan=subscription_for(conn, row["customer_id"])["plan"],
     )
+
+
+def issue_key(
+    conn: sqlite3.Connection, customer_id: str, mode: str, label: str, at: Optional[str] = None
+) -> str:
+    """A new key on the account, shown once by whoever asked for it.
+
+    Live keys go up to the number the account's plan includes; test keys are not counted.
+    """
+    if mode == "live":
+        plan = subscription_for(conn, customer_id)["plan"]
+        allowed = PLANS[plan]["live_keys"]
+        held = conn.execute(
+            "SELECT COUNT(*) FROM api_keys WHERE customer_id = ? AND mode = 'live'", (customer_id,)
+        ).fetchone()[0]
+        if allowed is not None and held >= allowed:
+            raise QuillonError(
+                "key_limit_reached",
+                f"The {plan} plan includes {allowed} live "
+                f"{'key' if allowed == 1 else 'keys'} and the account has {held}. Roll one of "
+                "them, or move to a plan that includes more.",
+            )
+    key = api_key(mode)
+    conn.execute(
+        "INSERT INTO api_keys (key, customer_id, mode, label, created_at) VALUES (?, ?, ?, ?, ?)",
+        (key, customer_id, mode, label, at or now_stamp()),
+    )
+    return key
 
 
 def touch(conn: sqlite3.Connection, key: str) -> None:

@@ -24,6 +24,7 @@ PROBLEMS: Dict[str, Any] = {
     "idempotency_conflict": (409, "That idempotency key was used on a different body"),
     "reference_in_use": (409, "That reference is on another shipment"),
     "email_in_use": (409, "That email address already has an account"),
+    "key_limit_reached": (409, "The plan has all the live keys it includes"),
     "not_cancellable": (409, "The parcel has gone too far to cancel"),
     "not_scannable": (409, "That parcel is not taking scans"),
     "label_unavailable": (409, "There is no label for this shipment"),

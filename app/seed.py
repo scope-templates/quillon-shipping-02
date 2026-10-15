@@ -196,6 +196,7 @@ CUSTOMER_FIELDS = (
     "status",
     "created_at",
     "dispatch_address",
+    "label_logo",
 )
 
 

@@ -155,9 +155,10 @@ def test_a_store_from_before_subscriptions_gives_every_shop_one(tmp_path, monkey
         ]
         # Opening it again leaves them as they are, and finds the shop added since.
         conn.execute(
-            "INSERT INTO customers VALUES ('cus_olderstorenetherby001', 'Netherby Cycles', "
+            "INSERT INTO customers (id, name, platform, city, contact_email, status, created_at) "
+            "VALUES ('cus_olderstorenetherby001', 'Netherby Cycles', "
             "'own build', 'Netherby', 'shop@netherbycycles.co.uk', 'active', "
-            "'2025-06-18T14:20:00Z', NULL)"
+            "'2025-06-18T14:20:00Z')"
         )
         prepare(conn)
         assert [tuple(row) for row in conn.execute(SUBSCRIPTIONS).fetchall()] == sorted(given + [

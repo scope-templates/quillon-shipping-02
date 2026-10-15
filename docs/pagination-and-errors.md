@@ -87,6 +87,7 @@ Every code, with a section each, is in [errors.md](errors.md). The short version
 | `idempotency_conflict` | 409 | That key was used on a different body. |
 | `reference_in_use` | 409 | That reference is on another of your shipments. |
 | `email_in_use` | 409 | On `POST /signups`: that email address already has an account. |
+| `key_limit_reached` | 409 | The account has every live key its plan includes. |
 | `not_cancellable` | 409 | The carrier has the parcel. |
 | `label_unavailable` | 409 | The shipment was cancelled. |
 | `rate_limited` | 429 | Too many calls this minute. See [authentication.md](authentication.md). |

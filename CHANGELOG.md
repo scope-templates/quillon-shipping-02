@@ -46,8 +46,11 @@ the entry for the deploy that fixes it.
 - `GET /v1/account`: the plan, where the subscription stands, the current period (none on pay
   as you go) and the calendar month so far, which is the parcels, the spend and the last booking
   on the mode of the key. See `docs/account-and-billing.md`.
-- Three plans: `payg` with no monthly fee, `standard` at £49 a month and `volume` at £199 a
-  month, the two with a fee taking 5% and 12% off the card on every parcel.
+- Three plans, set by what comes with them. `payg`, with no monthly fee: 120 calls a minute on
+  a live key, one live key and plain labels. `standard`, £49 a month: 300 a minute, three live
+  keys, the shop's logo on the label and 3% off the card. `volume`, £199 a month: 1,000 a
+  minute, as many live keys as the shop wants, 8% off and a named contact here. A test key is
+  allowed 120 a minute on every plan.
 - `POST /signups`, which the form on the website posts to. The shop starts a thirty-day trial on
   pay as you go with one test key, shown once; an email address that already has an account is
   `409 email_in_use`.

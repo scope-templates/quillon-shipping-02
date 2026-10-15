@@ -9,8 +9,8 @@ Authorization: Bearer qp_live_8zkdbmhybs5zpfwzwz5kzqvt
 ```
 
 Keys are issued per account, not per person. A signup on the website comes with one test key;
-we set up the live ones when you sign, and you can write to support@quillonpost.co.uk if you
-want another.
+we set up the live ones when you sign, as many as your plan includes, and you can write to
+support@quillonpost.co.uk if you want another.
 
 ## Test and live
 
@@ -66,8 +66,10 @@ Rate limits are counted per key, in windows of a minute:
 
 | Key | Requests a minute |
 | --- | --- |
-| `qp_live_` | 600 |
-| `qp_test_` | 120 |
+| `qp_live_` on `payg` | 120 |
+| `qp_live_` on `standard` | 300 |
+| `qp_live_` on `volume` | 1,000 |
+| `qp_test_`, on any plan | 120 |
 
 A `/v1` call with no key at all, or a key we cannot place, is counted against the address it
 came from and allowed 60 a minute.
@@ -76,11 +78,12 @@ Every `/v1` response carries the count, including the refusals. `GET /health` an
 links are not counted and do not carry the headers.
 
 ```
-X-RateLimit-Limit: 600
-X-RateLimit-Remaining: 573
+X-RateLimit-Limit: 300
+X-RateLimit-Remaining: 273
 X-RateLimit-Reset: 1788080460
 ```
 
 Over the line you get `429` with code `rate_limited`. Back off until the time in
-`X-RateLimit-Reset`, which is in unix seconds. If you need more than 600, write to us: it is
-usually cheaper for both of us to look at what you are polling.
+`X-RateLimit-Reset`, which is in unix seconds. If you need more than your plan allows, the
+plans in [account-and-billing.md](account-and-billing.md) go up to 1,000; past that, write to us:
+it is usually cheaper for both of us to look at what you are polling.
