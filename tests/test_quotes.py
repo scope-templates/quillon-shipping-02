@@ -69,14 +69,15 @@ def test_the_carrier_list_names_all_four_and_their_services(client, live):
     assert "next_day" in services and "economy" in services
 
 
-def test_a_plan_with_a_monthly_fee_takes_its_share_off_every_line(client, live):
+def test_each_plan_pays_its_own_percentage_of_the_card_on_every_line(client, live):
     def by_service(headers):
         lines = quote(client, headers).json()["quotes"]
         return {(line["carrier_code"], line["service"]): line["price_pence"] for line in lines}
 
+    # Wistow is on standard, which pays the card; Netherby pays as it goes, which is 15% more.
     on_standard = by_service(live)
     on_payg = by_service({"Authorization": f"Bearer {OTHER_KEY}"})
     assert set(on_standard) == set(on_payg)
-    for line, card in on_payg.items():
-        assert on_standard[line] == parcel_price("standard", card)
-        assert on_standard[line] < card
+    for line, card in on_standard.items():
+        assert on_payg[line] == parcel_price("payg", card) > card
+        assert parcel_price("volume", card) < card

@@ -47,10 +47,10 @@ the entry for the deploy that fixes it.
   as you go) and the calendar month so far, which is the parcels, the spend and the last booking
   on the mode of the key. See `docs/account-and-billing.md`.
 - Three plans, set by what comes with them. `payg`, with no monthly fee: 120 calls a minute on
-  a live key, one live key and labels without a logo. `standard`, £49 a month: 300 a minute, three live
-  keys, the shop's logo on the label and 3% off the card. `volume`, £199 a month: 1,000 a
-  minute, as many live keys as the shop wants, 8% off and a named contact here. A test key is
-  allowed 120 a minute on every plan.
+  a live key, one live key, labels without a logo, and the card and 15% on every parcel.
+  `standard`, £29 a month: 300 a minute, three live keys, the shop's logo on the label, and the
+  card price. `volume`, £199 a month: 1,000 a minute, as many live keys as the shop wants, 8% off
+  the card and a named contact here. A test key is allowed 120 a minute on every plan.
 - `POST /signups`, which the form on the website posts to. The shop starts a thirty-day trial on
   pay as you go with one test key, shown once; an email address that already has an account is
   `409 email_in_use`.

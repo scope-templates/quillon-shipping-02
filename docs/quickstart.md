@@ -69,8 +69,8 @@ three and the last:
 ```
 
 Cheapest first. Show the shopper whichever you like; each quote holds for thirty minutes.
-These are the card prices, which is what a shop on pay as you go pays; a shop on standard or
-volume gets its own lower price back from the same call.
+These are the card prices, which is what a shop on standard pays; the same call gives a shop on
+pay as you go the card and 15%, and one on volume 8% off it.
 
 ## 2. Book it
 

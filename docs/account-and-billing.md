@@ -29,7 +29,7 @@ This is Granthorpe Cycles on the last day of August:
   "this_month": {
     "month": "2026-08",
     "parcels": 2,
-    "spend_pence": 1515,
+    "spend_pence": 1560,
     "last_booked_at": "2026-08-27T08:30:37Z"
   }
 }
@@ -49,19 +49,20 @@ none of the three numbers.
 
 ## Plans
 
-| Plan | A month | Live calls a minute | Live keys | Labels | Off the card on every parcel |
+| Plan | A month | Live calls a minute | Live keys | Labels | Every parcel |
 | --- | --- | --- | --- | --- | --- |
-| `payg` | nothing | 120 | one | without a logo | nothing |
-| `standard` | £49 | 300 | three | with your logo | 3% |
-| `volume` | £199 | 1,000 | as many as you want | with your logo | 8%, and a named contact here |
+| `payg` | nothing | 120 | one | without a logo | the card and 15% |
+| `standard` | £29 | 300 | three | with your logo | the card |
+| `volume` | £199 | 1,000 | as many as you want | with your logo | 8% off the card, and a named contact here |
 
 A test key is allowed 120 calls a minute on every plan, and test keys do not count towards the
 live ones. The logo is the wordmark we hold on your account; send it to support and we will set
 it, and labels on a plan that prints one carry it across the top.
 
-The rate card is the list price and it is the same for every shop. The plan takes its share off
-each line when a parcel is quoted or booked, rounded to the nearest 5p as the card is, so
-`price_pence` on a quote and on a shipment is already your price. An invoice is the month's fee
+The rate card is the list price and it is the same for every shop. The plan's percentage is
+taken on each line when a parcel is quoted or booked, rounded to the nearest 5p as the card is,
+so `price_pence` on a quote and on a shipment is already your price. At our average parcel,
+standard costs less than pay as you go from about thirty live parcels a month. An invoice is the month's fee
 and the live parcels booked since the last invoice. To move plan, write to
 support@quillonpost.co.uk.
 

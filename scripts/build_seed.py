@@ -88,6 +88,9 @@ LOGO_SHARE = 0.6
 # Middling shops whose July and August are at least three times their months before.
 GROWING_PAYG = 10
 GROWING_STANDARD = 5
+# Of the pay-as-you-go ones, the first few grew past the parcels a month at which standard's fee
+# costs less than pay as you go's 15% on the card, at the year's average parcel.
+PAST_STANDARD = 7
 RAMP_TIMES = 3
 RAMP_MONTHS = ((2026, 7), (2026, 8))
 RAMP_SEED = 20260701
@@ -989,11 +992,19 @@ def months_before_july(shop, monthly):
     return sum(monthly.get(shop["id"], {}).get(month, 0) for month in months) / len(months)
 
 
+def standard_break_even(card_pence):
+    """Parcels a month at this card price past which standard costs less than pay as you go."""
+    surcharge = (PLANS["payg"]["card_percent"] - PLANS["standard"]["card_percent"]) / 100
+    return math.ceil(fee_for("standard") / (surcharge * card_pence))
+
+
 def ramp_up(ramp, shops, keys, shipments, events, stopped):
     """Middling shops whose live parcels in July and August are three times what they had been.
 
     Ten are on pay as you go and five on standard; every month of the two is above what the
-    middling shops that did not grow send in a month. Their live keys were in use at the end.
+    middling shops that did not grow send in a month, and for the first few on pay as you go above
+    the parcels a month at which standard would cost them less. Their live keys were in use at the
+    end.
     """
     card = card_lookup()
     live = [shop for shop in shops if shop["_live"]]
@@ -1011,6 +1022,8 @@ def ramp_up(ramp, shops, keys, shipments, events, stopped):
         months_before_july(shop, monthly) for shop in middling if shop["id"] not in growing
     )
     middle = others[len(others) // 2]
+    listed = [row["price_pence"] for row in shipments if row["mode"] == "live"]
+    crossing = standard_break_even(sum(listed) / len(listed))
 
     scans_from = AS_OF - timedelta(days=SCAN_RETENTION_DAYS)
     for shop in chosen:
@@ -1026,6 +1039,8 @@ def ramp_up(ramp, shops, keys, shipments, events, stopped):
         )
         preferred = {row["carrier_code"] for row in mine}
         wanted = math.ceil(max(RAMP_TIMES * months_before_july(shop, monthly), middle + 1))
+        if shop in chosen[:PAST_STANDARD]:
+            wanted = max(wanted, crossing + 1)
         for year, month in RAMP_MONTHS:
             days = [date(year, month, day) for day in range(1, days_in(year, month) + 1)]
             had = monthly.get(shop["id"], {}).get(f"{year}-{month:02d}", 0)

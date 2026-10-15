@@ -42,8 +42,9 @@ hundred calls a day, which is small enough that the four of us can run the whole
   its subscription stands, the period it is in (none on pay as you go), and the calendar month
   so far, which is the parcels, the spend and the last booking on the key's own mode. The plan
   is `payg`, `standard` or `volume`, and it sets what a live key may call in a minute, how many
-  live keys the account may have, whether the shop's logo goes on its labels, and what comes off
-  the card when a parcel is quoted or booked.
+  live keys the account may have, whether the shop's logo goes on its labels, and what a parcel
+  costs against the card when it is quoted or booked: the card and 15% on `payg`, the card on
+  `standard` at £29 a month, 8% off on `volume` at £199.
 
 The carriers come in the other way. `POST /carriers/{code}/scans` is the feed they post to, one
 scan at a time, on a shared secret out of the environment (`CARRIER_SECRET_NORTHGATE` and the
@@ -109,7 +110,7 @@ One is a strict expected failure for a known issue listed at the top of `CHANGEL
 
 ## The data
 
-`data/seed.json` is the year to the first of September 2026: 140 shops, 218 keys, 6,262 parcels,
+`data/seed.json` is the year to the first of September 2026: 140 shops, 218 keys, 6,463 parcels,
 and the ninety days of scans still in retention, with the webhook endpoints and deliveries that
 go with them. November and January are the busy months and one shop is nearly a third of the
 volume. Every shop has a subscription, and behind them are the billing provider's 829 events:
