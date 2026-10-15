@@ -2,6 +2,7 @@
 
 import json
 import sys
+from contextlib import closing
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -67,12 +68,11 @@ def test_the_history_ends_the_day_before_the_store_was_opened(tmp_path):
     newest = max(row["created_at"] for row in committed["shipments"])
 
     opened = datetime(2027, 3, 18, 9, 40, tzinfo=timezone.utc)
-    conn = prepare(connect(tmp_path / "opened.sqlite"))
-    load_seed(conn, opened=opened)
-    first, last = conn.execute(
-        "SELECT MIN(created_at), MAX(created_at) FROM shipments"
-    ).fetchone()
-    conn.close()
+    with closing(prepare(connect(tmp_path / "opened.sqlite"))) as conn:
+        load_seed(conn, opened=opened)
+        first, last = conn.execute(
+            "SELECT MIN(created_at), MAX(created_at) FROM shipments"
+        ).fetchone()
     assert last[:10] == "2027-03-17"
     assert read_stamp(last) - read_stamp(first) == read_stamp(newest) - read_stamp(oldest)
 
