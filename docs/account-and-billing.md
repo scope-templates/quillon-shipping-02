@@ -13,8 +13,7 @@ curl https://api.quillonpost.co.uk/v1/account \
   -H "Authorization: Bearer $QUILLON_KEY"
 ```
 
-This is Amberwell Trading Co on the last day of the bundled history in `data/seed.json`; a store
-moves those dates up to the day it is first opened:
+This is Amberwell Trading Co on the last day of August:
 
 ```json
 {

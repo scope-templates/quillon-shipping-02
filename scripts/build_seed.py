@@ -922,8 +922,9 @@ def stop_sending(paper, shops, keys, shipments, events):
             months.setdefault(row["customer_id"], set()).add(row["created_at"][:7])
             if "2026-06-01" <= row["created_at"] < STOPPED_BETWEEN[0].isoformat():
                 early_june.add(row["customer_id"])
+    live = [shop for shop in shops if shop["_live"]]
     steady = [
-        shop for shop in [shop for shop in shops if shop["_live"]][STOPPED_FROM_RANK:-SMALLEST_TAIL]
+        shop for shop in live[STOPPED_FROM_RANK:-SMALLEST_TAIL]
         if shop["id"] in early_june
         and len(months[shop["id"]] & set(STEADY_MONTHS)) >= len(STEADY_MONTHS) - 1
     ]
@@ -952,7 +953,7 @@ def stop_sending(paper, shops, keys, shipments, events):
             last_used = read_stamp(last_parcel[row["customer_id"]]) + timedelta(
                 minutes=paper.randint(1, 240)
             )
-            if row["last_used_at"] is None or row["last_used_at"] > stamp(last_used):
+            if row["last_used_at"] is not None and row["last_used_at"] > stamp(last_used):
                 row["last_used_at"] = stamp(last_used)
     return shipments, events
 
