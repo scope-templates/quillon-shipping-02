@@ -3690,6 +3690,29 @@
             "type": "string",
             "title": "Platform"
           },
+          "technical_contact_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Technical Contact Name",
+            "description": "Who we write to about the integration; null when we have none."
+          },
+          "technical_contact_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Technical Contact Email"
+          },
           "mode": {
             "type": "string",
             "enum": [
@@ -4184,6 +4207,28 @@
           "contact_email": {
             "type": "string",
             "title": "Contact Email"
+          },
+          "technical_contact_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Technical Contact Name"
+          },
+          "technical_contact_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Technical Contact Email"
           },
           "status": {
             "type": "string",
@@ -4828,6 +4873,32 @@
             "maxLength": 80,
             "minLength": 1,
             "title": "City"
+          },
+          "technical_contact_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Technical Contact Name",
+            "description": "Whoever will wire the API in, if it is not the person signing up."
+          },
+          "technical_contact_email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "email"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Technical Contact Email"
           }
         },
         "type": "object",
@@ -4843,7 +4914,9 @@
           "city": "Saltmarsh",
           "contact_email": "hello@saltmarshwoollens.co.uk",
           "platform": "marketside",
-          "shop_name": "Saltmarsh Woollens"
+          "shop_name": "Saltmarsh Woollens",
+          "technical_contact_email": "dev@saltmarshwoollens.co.uk",
+          "technical_contact_name": "Bethan Loveday"
         }
       },
       "Subscription": {

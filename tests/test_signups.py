@@ -131,3 +131,25 @@ def test_an_address_is_the_same_address_whatever_its_letters(client):
     )
     assert again.status_code == 409
     assert again.json()["code"] == "email_in_use"
+
+
+def test_a_signup_can_name_who_will_wire_the_api_in(client):
+    made = client.post(
+        "/signups",
+        json={**FORM, "technical_contact_name": "Bethan Loveday",
+              "technical_contact_email": "Dev@SaltmarshWoollens.co.uk"},
+    ).json()
+    assert made["customer"]["technical_contact_name"] == "Bethan Loveday"
+    assert made["customer"]["technical_contact_email"] == "dev@saltmarshwoollens.co.uk"
+
+    account = client.get("/v1/account", headers={"Authorization": f"Bearer {made['key']}"}).json()
+    assert account["technical_contact_name"] == "Bethan Loveday"
+    assert account["technical_contact_email"] == "dev@saltmarshwoollens.co.uk"
+
+    refused = client.post(
+        "/signups",
+        json={**FORM, "contact_email": "orders@saltmarshwoollens.co.uk",
+              "technical_contact_email": "not an address"},
+    )
+    assert refused.status_code == 422
+    assert "technical_contact_email" in refused.json()["detail"]

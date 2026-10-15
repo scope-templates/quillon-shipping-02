@@ -197,6 +197,8 @@ CUSTOMER_FIELDS = (
     "created_at",
     "dispatch_address",
     "label_logo",
+    "technical_contact_name",
+    "technical_contact_email",
 )
 
 

@@ -36,7 +36,9 @@ def get_account(
     test parcels, which are never invoiced. A parcel cancelled before collection is not counted.
     """
     shop = conn.execute(
-        "SELECT id, name, platform FROM customers WHERE id = ?", (who.customer_id,)
+        "SELECT id, name, platform, technical_contact_name, technical_contact_email "
+        "FROM customers WHERE id = ?",
+        (who.customer_id,),
     ).fetchone()
     subscription = billing.subscription_for(conn, who.customer_id)
 

@@ -284,6 +284,10 @@ class Account(BaseModel):
     id: str
     name: str
     platform: str
+    technical_contact_name: Optional[str] = Field(
+        default=None, description="Who we write to about the integration; null when we have none."
+    )
+    technical_contact_email: Optional[str] = None
     mode: Mode
     plan: Literal[tuple(PLANS)]  # type: ignore[valid-type]
     status: Literal[SUBSCRIPTION_STATUSES]  # type: ignore[valid-type]
@@ -306,6 +310,13 @@ class SignupRequest(BaseModel):
         description="What the shop's checkout runs on, or `own build`.",
     )
     city: str = Field(min_length=1, max_length=80)
+    technical_contact_name: Optional[str] = Field(
+        default=None,
+        min_length=1,
+        max_length=120,
+        description="Whoever will wire the API in, if it is not the person signing up.",
+    )
+    technical_contact_email: Optional[EmailStr] = None
 
     model_config = ConfigDict(
         str_strip_whitespace=True,
@@ -315,6 +326,8 @@ class SignupRequest(BaseModel):
                 "contact_email": "hello@saltmarshwoollens.co.uk",
                 "platform": "marketside",
                 "city": "Saltmarsh",
+                "technical_contact_name": "Bethan Loveday",
+                "technical_contact_email": "dev@saltmarshwoollens.co.uk",
             }
         }
     )
@@ -326,6 +339,8 @@ class Customer(BaseModel):
     platform: str
     city: str
     contact_email: str
+    technical_contact_name: Optional[str] = None
+    technical_contact_email: Optional[str] = None
     status: Literal["trialling", "active", "closed"]
     created_at: str
 

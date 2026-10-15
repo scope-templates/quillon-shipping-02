@@ -51,6 +51,10 @@ def create_signup(
         "platform": body.platform,
         "city": body.city,
         "contact_email": email,
+        "technical_contact_name": body.technical_contact_name,
+        "technical_contact_email": (
+            str(body.technical_contact_email).lower() if body.technical_contact_email else None
+        ),
         "status": "trialling",
         "created_at": stamp(at),
     }

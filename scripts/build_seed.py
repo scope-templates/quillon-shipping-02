@@ -85,6 +85,7 @@ STOPPED_FROM_RANK = 3
 STEADY_MONTHS = ("2026-01", "2026-02", "2026-03", "2026-04", "2026-05", "2026-06")
 STOPPED_BETWEEN = (date(2026, 6, 20), date(2026, 7, 31))
 LOGO_SHARE = 0.6
+TECHNICAL_CONTACTS = 40
 # Middling shops whose July and August are at least three times their months before.
 GROWING_PAYG = 10
 GROWING_STANDARD = 5
@@ -1364,6 +1365,25 @@ def build_billing(paper, shops, keys, shipments, growing):
         shop["label_logo"] = None
         if PLANS[subscription["plan"]]["logo_on_label"] and paper.random() < LOGO_SHARE:
             shop["label_logo"] = shop["name"].removeprefix("The ").upper()
+
+    # The online brands with engineers of their own: every shop on volume, every shop that grew,
+    # and the busiest of the rest until there are forty.
+    plan_now = {row["customer_id"]: row["plan"] for row in subscriptions}
+    engineers = [
+        shop for shop in shops if plan_now[shop["id"]] == "volume" or shop["id"] in growing
+    ]
+    for shop in [shop for shop in shops if shop["_live"]]:
+        if len(engineers) >= TECHNICAL_CONTACTS:
+            break
+        if shop not in engineers and shop["status"] != "closed":
+            engineers.append(shop)
+    for shop in shops:
+        shop["technical_contact_name"] = None
+        shop["technical_contact_email"] = None
+    for shop in engineers:
+        domain = shop["contact_email"].split("@")[1]
+        shop["technical_contact_name"] = person(paper)
+        shop["technical_contact_email"] = f"{paper.choice(('dev', 'engineering'))}@{domain}"
 
     kept.sort(key=lambda row: (row["occurred_at"], row["id"]))
     return shipments, subscriptions, kept

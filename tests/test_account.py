@@ -84,6 +84,8 @@ def test_the_account_says_its_plan_and_where_the_subscription_stands(client, liv
     assert body["current_period_start"] == "2026-08-04T10:00:00Z"
     assert body["current_period_end"] == "2026-09-04T10:00:00Z"
     assert body["trial_ends_at"] is None
+    assert body["technical_contact_name"] is None
+    assert body["technical_contact_email"] is None
     assert body["this_month"]["month"] == now().strftime("%Y-%m")
 
 

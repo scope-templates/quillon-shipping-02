@@ -20,6 +20,8 @@ This is Granthorpe Cycles on the last day of August:
   "id": "cus_pj2sjzcvzzjnbk9yx8z934",
   "name": "Granthorpe Cycles",
   "platform": "perchbox",
+  "technical_contact_name": null,
+  "technical_contact_email": null,
   "mode": "live",
   "plan": "standard",
   "status": "active",
@@ -81,7 +83,9 @@ curl https://api.quillonpost.co.uk/signups \
     "shop_name": "Saltmarsh Woollens",
     "contact_email": "hello@saltmarshwoollens.co.uk",
     "platform": "marketside",
-    "city": "Saltmarsh"
+    "city": "Saltmarsh",
+    "technical_contact_name": "Bethan Loveday",
+    "technical_contact_email": "dev@saltmarshwoollens.co.uk"
   }'
 ```
 
@@ -93,6 +97,8 @@ curl https://api.quillonpost.co.uk/signups \
     "platform": "marketside",
     "city": "Saltmarsh",
     "contact_email": "hello@saltmarshwoollens.co.uk",
+    "technical_contact_name": "Bethan Loveday",
+    "technical_contact_email": "dev@saltmarshwoollens.co.uk",
     "status": "trialling",
     "created_at": "2026-08-12T14:02:11Z"
   },
@@ -113,6 +119,8 @@ curl https://api.quillonpost.co.uk/signups \
 **The key is shown once, here.** It is a `qp_test_` key and it works straight away, against
 everything in the [quickstart](quickstart.md). Live keys are set up by hand when the shop signs.
 An email address that already has an account, in any mix of capitals, is `409 email_in_use`.
+The technical contact is optional: whoever will wire the API in, when that is not the person
+signing up. It comes back on `GET /v1/account`, and is null there when we have none.
 
 ## For the billing provider: posting an event
 

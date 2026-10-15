@@ -25,7 +25,9 @@ CREATE TABLE IF NOT EXISTS customers (
     status        TEXT NOT NULL,
     created_at    TEXT NOT NULL,
     dispatch_address TEXT,
-    label_logo    TEXT
+    label_logo    TEXT,
+    technical_contact_name  TEXT,
+    technical_contact_email TEXT
 );
 
 CREATE TABLE IF NOT EXISTS api_keys (
@@ -212,7 +214,11 @@ def connect(where: Optional[Path] = None) -> sqlite3.Connection:
 
 
 # Columns added to a table after it was first made, put on a store older than them.
-ADDED_COLUMNS = (("customers", "label_logo", "TEXT"),)
+ADDED_COLUMNS = (
+    ("customers", "label_logo", "TEXT"),
+    ("customers", "technical_contact_name", "TEXT"),
+    ("customers", "technical_contact_email", "TEXT"),
+)
 
 
 def prepare(conn: sqlite3.Connection) -> sqlite3.Connection:
